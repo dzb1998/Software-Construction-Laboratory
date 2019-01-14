@@ -1,0 +1,104 @@
+Zhubo Deng 605186231 CS 35L Lec 8
+
+1. What shell command uses the man program to print all the commands that have a specific word in 
+   their man page (or at least the description part of the man page)? (hint: man man)
+   man man: print out the manual description page of all the commands
+   man -k: apropos the certain command with a specified keyword
+   man -k printf: list all the command that contain “printf”
+   
+2. Where are the mv and sh programs located in the file system? List any shell commands you used 
+   to answer this question.   
+   whereis mv
+   mv: /usr/bin/mv /usr/local/cs/bin/mv /usr/share/man/man1p/mv.1p.gz /usr/share/man/man1/mv.1.gz
+   whereis sh
+   sh: /usr/bin/sh /usr/share/man/man1p/sh.1p.gz /usr/share/man/man1/sh.1.gz
+   which mv
+   /usr/bin/mv
+   which sh
+   /usr/bin/sh
+   
+3. What executable programs have names that are exactly two characters long and end in r, and what 
+   do they do? List any shell commands you used to answer this question.
+   cd /usr/bin
+   find -executable -name '?''r'
+   ./tr
+   ./ar
+   ./pr
+   
+4. When you execute the command named by the symbolic link /usr/bin/emacs, which file actually is 
+   executed? List any shell commands you used to answer this question.   
+   readlink -f /usr/bin/emacs
+   /usr/bin/emacs-24.3
+   
+5. What is the version number of the /usr/bin/gcc program? of the plain gcc program? Why are they 
+   different programs?
+   cd /usr/bin
+   gcc -dumpversion
+   4.8.5
+   cd /usr/local/cs/bin
+   gcc -dumpversion
+   4.8.5
+   Different locations have different versions, so we have to export PATH before we do the assignment 
+   New versions have new features
+   
+6. The chmod program changes permissions on a file. What does the symbolic mode u+sx,o-w mean, in 
+   terms of permissions?
+   u+sx: set user ID upon execution; add execute permission to user
+   o-w: remove write permission from others
+   
+7. Use the find command to find all directories modified in the last four weeks that are located under (or 
+   are the same as) the directory /usr/local/cs. List any shell commands you used to answer this question.
+   cd /usr/local/cs
+   find -type d -mtime -28
+   
+8. Of the files in the same directory as find, how many of them are symbolic links? List any shell commands 
+   you used to answer this question.
+   cd /usr/bin
+   find -type l
+   
+9. What is the oldest regular file in the /usr/lib64 directory? Use the last-modified time to determine 
+   age. Specify the name of the file without the /usr/lib64/ prefix. Consider files whose names start 
+   with ".". List any shell commands you used to answer this question.
+   ls -lt /usr/lib64
+   -rwxr-xr-x.  1 root root       19408 Dec 28  2013 librom1394.so.0.3.0
+   
+10.Where does the locale command get its data from? List any shell commands you used to answer this question.
+   man locale, which shows: 
+   locale displays information about the current locale, or a list of all available locales.
+   When locale is run with no arguments, it will display the current source of each locale category.
+   When locale is given the name of a category, it acts as if it had been given each keyword in that category. 
+   For each keyword it is given, the current value is displayed.
+   
+11.In Emacs, what commands have downcase in their name? List any Emacs commands you used to answer this question.
+   M-l: Convert following word to lower case (lower case, word)
+   M-u: Convert following word to upper case (upper case, word)
+   C-x C-l: Convert region to lower case (lower case, region)
+   C-x C-u: Convert region to upper case (upper case, region)
+   
+12.Briefly, what do the Emacs keystrokes C-M-r through C-M-v do? Can you list their actions concisely? 
+   List any Emacs commands you used to answer this question.
+   Using C-h k to search for emacs commands
+   C-M-r: reverse regular expression search 
+   C-M-v: scroll help window
+   
+13.In more detail, what does the Emacs keystroke C-g do? List any Emacs commands you used to answer this question.
+   Using C-h k to search for emacs commands
+   C-g: keyboard quit; during execution of Lisp code, this character causes a quit directly
+   
+14.What does the Emacs yank function do, and how can you easily invoke it using keystrokes? List any 
+   Emacs commands you used to answer this question.
+   Yanking means reinserting text previously killed.
+   C-y: yank the last kill into the buffer
+   
+15.When looking at the directory /usr/bin, what's the difference between the output of the ls -l command, 
+   and the directory listing of the Emacs dired command? List any shell or Emacs commands you used to 
+   answer this question.
+   For Shell: ls -l /usr/bin, shows total 322424 commands
+   For Emacs: emacs Enter C-x d /usr/bin, shows total 106792 commands available 278276452
+   The number difference means Emacs tired command show more files than Shell.
+   
+   
+   
+
+
+

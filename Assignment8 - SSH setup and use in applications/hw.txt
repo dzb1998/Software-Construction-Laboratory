@@ -1,0 +1,45 @@
+HW 8 
+
+Question 1:
+
+Suppose the other teams really had been observing all the bytes going across the network.
+Is your resulting network still secure? If so, explain why, and explain whether your answer
+would change if (1) you assumed the other teams had also tapped your keyboards and had observed
+all of your team's keystrokes, or (2) you are booting off USB and you assume the other teams
+temporarily had physical control of the USB. If not, explain any weaknesses of your team's
+setups, focusing on possible attacks by such outside observers.
+
+Answer:
+
+The network is still secure even if other teams had been observing all the bytes going across 
+the network. Since the messages are encrypted with public key and can only be decrypted by the 
+private keys on our team conputers, so it is safe. Therefore, other team won't able to tell 
+the private key because they won't be able to compute the private keys. 
+
+(1) If other teams recorded our keystrokes, it is still impossible to attain our private key 
+because it is not related to our keystrokes. They can access our computer and files or even 
+attack our system with our password. 
+
+(2) If other teams had the physical control of the USB, they can easily access to the .ssh and 
+thus get our private key. Then, they will be able to decrypt all of our messages with the 
+private key while they observig the bytes going across the network.
+
+
+
+Question 2:
+
+Explain why the gpg2 --verify command in the following instructions doesn't really verify that 
+you personally created the file in question. How would you go about fixing this problem?
+
+Answer:
+
+The gpg2 --verify command doesn't really verify that you personally created the file. Actually it 
+will check that the matching between target file and detached signatures. The problems will occur 
+when it is determinging the files come from different souces because people may attack the file 
+with a different detached signature.
+
+To fix this, we can find a trusted third party source or an organization to verify who created 
+the files, so that they can track who actually posted the key. Thus, the verification will make 
+sure that the owner or the receiver have the right key.
+
+

@@ -1,0 +1,212 @@
+Zhubo Deng
+605186231
+
+
+Assignment 6. Multithreaded performance
+
+Laboratory
+Ordinarily when processes run in Linux, each gets its own virtual processor. 
+For example, when you run the command:
+
+tr -cs 'A-Za-z' '[\n*]' | sort -u | comm -23 - words
+
+there are three processes, one each for tr, sort, and comm. Each process has 
+its own virtual memory, and processes can communicate to each other only via 
+system calls such as read and write.
+
+This lab focuses on a different way to gain performance: multithreading. In 
+this approach, a process can have more than one thread of execution. Each 
+thread has its own instruction pointer, registers and stack, so that each 
+thread can be executing a different function and the functions' local 
+variables are accessed only by that thread. However, threads can directly 
+access shared memory, and can communicate results to each other efficiently 
+via the shared memory, so long as they take care not to step on each 
+others' toes.
+
+Synchronization is the Achilles' heel of multithreading, in that it's easy to 
+write buggy programs that have race conditions, where one thread is reading 
+from an area that another thread is simultaneously writing to, and therefore 
+reads inconsistent data (a polite term for "garbage"). This lab does not 
+attack that problem: you will use a prebuilt application that should not have 
+internal race conditions, and you will write an application that is 
+embarrassingly parallel, so that there's no need for subthreads to synchronize 
+with each other.
+
+
+Lab
+
+Starting with coreutils 8.6, released 2010-10-15, GNU sort can use multiple 
+threads to improve performance. This improvement to GNU sort was contributed 
+by UCLA students as part of Computer Science 130, the undergraduate software 
+engineering course. This improvement is in the current version of GNU sort 
+installed as /usr/local/cs/bin/sort in the SEASnet GNU/Linux servers.
+
+Run the command sort --version to make sure you're using a new-enough version. 
+Investigate how well the multithreaded sort works, by measuring its 
+performance. First, generate a file containing 2^24 random single-precision 
+floating point numbers, in textual form, one per line with no white space. 
+(Although 2 to the 24th power equals 16,777,216 you should calculate it from 
+24 rather than simply putting a constant like 16777216 somewhere in your 
+source code.) Do this by running the the od command with standard input taken 
+from /dev/urandom, interpreting the bytes read from standard input as 
+single-precision floating point numbers. (Almost certainly you will 
+occasionally get NaNs, but that's OK; just leave them in there.) Process the 
+output of od using standard tools such as sed and tr so that each 
+floating-point number is on a separate line, without any white space.
+
+Once you have your test data, perhaps in a pipe or perhaps in a file, use 
+time -p to time the command sort -g on that data, with the output sent 
+to /dev/null. Do not time od or any of the rest of your test harness; time 
+just sort itself.
+
+Invoke sort with the --parallel option as well as the -g option, and run your 
+benchmark with 1, 2, 4, and 8 threads, in each case recording the real, user, 
+and system time. Assuming your PATH environment variable is set properly so 
+that /usr/local/cs/bin is at its start, you can use sort --help or info sort 
+for details about how to use the --parallel option.
+
+Keep a log of every step you personally took during the laboratory to measure 
+the speed of sort, and what the results of the step were. The idea behind 
+recording your steps is that you should be able to reproduce your work later, 
+if need be.
+
+
+
+1. Preappend PATH and get sort version which was contributed by UCLA students 
+as part of Computer Science 130, the undergraduate software engineering course.
+
+	[classzde@lnxsrv06 ~]$ echo $PATH
+	/usr/lib64/qt-3.3/bin:/u/eng/class/classzde/perl5/bin:/usr/local/bin:/usr
+	/bin:/usr/X11R6/bin:/usr/local/cs/bin:/u/eng/class/classzde/bin
+	[classzde@lnxsrv06 ~]$ export PATH=/usr/local/cs/bin:$PATH
+	[classzde@lnxsrv06 ~]$ echo $PATH
+	/usr/local/cs/bin:/usr/lib64/qt-3.3/bin:/u/eng/class/classzde/perl5/bin:
+	/usr/local/bin:/usr/bin:/usr/X11R6/bin:/usr/local/cs/bin:/u/eng/class
+	/classzde/bin
+	[classzde@lnxsrv06 ~]$ sort --version
+	sort (GNU coreutils) 8.30
+	Copyright (C) 2018 Free Software Foundation, Inc.
+	License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses
+	/gpl.html>.
+	This is free software: you are free to change and redistribute it.
+	There is NO WARRANTY, to the extent permitted by law.
+
+	Written by Mike Haertel and Paul Eggert.
+	[classzde@lnxsrv06 ~]$ 
+
+(Since my sort version is 8.30 as shown, so it should be new enough.)
+
+
+
+2. Investigate how well the multithreaded sort works, by measuring its 
+performance. First, generate a file containing 2^24 random single-precision 
+floating point numbers, in textual form, one per line with no white space.
+
+od command in Linux is used to convert the content of input in different 
+formats with octal format as the default format.
+od is a program for displaying ("dumping") data in various human-readable 
+output formats.
+
+-An Option: It displays the contents of input in character format but with 
+no offset information.
+-N(some number) Option :It display limited bytes in output using -N option.
+	The number after N taking the bytes. and a single float number takes each 
+	number 4 bytes. So if we want a file containing 2^24 random 
+	single-precision floating point numbers, we will do 4*2^24 = 2^26 as input
+-t Option : It select output format and display it.
+	-f same as -t fF, select floats
+
+(We run the command: )
+
+	[classzde@lnxsrv06 ~]$ od -An -t fF -N $((2**26)) < /dev/urandom | 
+	tr -s ' ' '\n' | sed '/^$/d' > randomfloat.txt
+	[classzde@lnxsrv06 ~]$ ls -l
+	-rw-r--r--  1 classzde class 228638460 Nov 17 17:38  randomfloat.txt
+	[classzde@lnxsrv06 ~]$ wc -l randomfloat.txt 
+	16777216 randomfloat.txt
+	[classzde@lnxsrv06 ~]$ 
+
+(After checking the file size (using ls -l) and line number (using wc -l), it 
+does have a normal file size (around 229MB) and correct line 
+number (2^24, 16777216 lines)).
+
+
+
+3. Once you have your test data, perhaps in a pipe or perhaps in a file, use 
+time -p to time the command sort -g on that data, with the output sent to 
+/dev/null. Do not time od or any of the rest of your test harness; time just 
+sort itself.
+
+	[classzde@lnxsrv06 ~]$ time -p sort -g randomfloat.txt > /dev/null
+	real 35.20
+	user 191.72
+	sys 1.23
+	[classzde@lnxsrv06 ~]$ 
+
+(Result of testing without use any thread as shown above.)
+
+
+
+4. Invoke sort with the --parallel option as well as the -g option, and run 
+your benchmark with 1, 2, 4, and 8 threads, in each case recording the real, 
+user, and system time. Assuming your PATH environment variable is set properly 
+so that /usr/local/cs/bin is at its start, you can use sort --help or info 
+sort for details about how to use the --parallel option.
+
+4.1 Check the PATH correct
+
+	[classzde@lnxsrv06 ~]$ echo $PATH
+	/usr/local/cs/bin:/usr/lib64/qt-3.3/bin:/u/eng/class/classzde/perl5/bin:
+	/usr/local/bin:/usr/bin:/usr/X11R6/bin:/usr/local/cs/bin:/u/eng/class
+	/classzde/bin
+	[classzde@lnxsrv06 ~]$ 
+
+(/usr/local/cs/bin is preappended at the beginning as shown)
+
+4.2 Using parallel
+
+‘--parallel=n’
+Set the number of sorts run in parallel to n. By default, n is set to the 
+number of available processors, but limited to 8, as there are diminishing 
+performance gains after that. Note also that using n threads increases the 
+memory usage by a factor of log n. Also see nproc invocation.
+
+[classzde@lnxsrv06 ~]$ time -p sort -g --parallel=1 randomfloat.txt > /dev/null
+real 177.72
+user 177.35
+sys 0.35
+[classzde@lnxsrv06 ~]$ time -p sort -g --parallel=2 randomfloat.txt > /dev/null
+real 94.02
+user 178.76
+sys 0.53
+[classzde@lnxsrv06 ~]$ time -p sort -g --parallel=4 randomfloat.txt > /dev/null
+real 55.75
+user 188.72
+sys 0.88
+[classzde@lnxsrv06 ~]$ time -p sort -g --parallel=8 randomfloat.txt > /dev/null
+real 38.04
+user 210.18
+sys 1.12
+[classzde@lnxsrv06 ~]$ 
+
+(Result of testing by using --parallel=1, 2, 4, 8 as shown above.)
+
+
+
+5. Conclusion
+
+From the data I got after running the command, I notice that more threads I 
+use, the less real time, the more user time, the more system time it took to 
+process. The real time decreased significantly, the user time increase 
+slightly, and the system time increase a lot. And also, the result of using 8 
+threads is similar to not using any parallel thread. I think the reason might 
+be that the new version of sort are using 8 threads to speed up the sorting 
+process.
+
+
+
+
+
+
+
+

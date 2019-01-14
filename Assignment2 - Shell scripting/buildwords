@@ -1,0 +1,54 @@
+#!/bin/sh
+
+# Zhubo Deng
+# 605186231
+
+grep -E '<td>.+<\/td>' |  \
+# only take the lines which contain <td>.+<\/td> from the webpage
+# and then output it
+# ".+" means regular expression that matches a character zero or more times
+# <td>.+<\/td>: matching between <td> and <\/td>
+
+awk 'NR % 2 == 0' | \
+# delete English words line; odd number lines
+
+sed 's/    <td>//g' | \
+# delete four spaces and <td> tags
+
+sed 's/<\/td>//g' |
+# delete <\/td> tags
+
+sed 's/<u>//g' | 
+# delete the <u> tags which means underline in the webpage
+
+sed 's/<\/u>//g' |
+# delete the <\/u> tags
+
+# right now we already deleted the HTML tags; only Hawaiian words left
+
+tr [:upper:] [:lower:] |
+# convert all the uppercae to the lowercase
+
+tr "\`" "\'" |
+# convert all the accent mark ` to '
+
+sed 's/,\s/\n/g' |
+# change all the combination of column and space ", " to a new line
+
+sed 's/\s/\n/g' |
+# change all the space " " to a new line
+
+sed '/[^pk'\''mnwlhaeiou]/d' |
+#tr -c "pk\'mnwlhaeiou" '[\n*]' |
+# convert the non-Hawaiian alpha to a blank line
+
+sed '/^$/d' |
+# delete the empty lines
+
+sort -u
+# sort and remove the duplicates
+
+# done with making Hawaiian dictionary
+
+
+

@@ -1,0 +1,318 @@
+Zhubo Deng
+605186231
+Assignment 5 / Lab report
+
+Laboratory: Buffered versus unbuffered I/O
+
+As usual, keep a log in the file lab.txt of what you do in the lab so that you 
+can reproduce the results later. This should not merely be a transcript of 
+what you typed: it should be more like a true lab notebook, in which you 
+briefly note down what you did and what happened.
+
+For this laboratory, you will implement transliteration programs tr2b and tr2u 
+that use buffered and unbuffered I/O respectively, and compare the resulting 
+implementations and performance. Each implementation should be a main program 
+that takes two operands from and to that are byte strings of the same length, 
+and that copies standard input to standard output, transliterating every byte 
+in from to the corresponding byte in to. Your implementations should report 
+an error from and to are not the same length, or if from has duplicate bytes. 
+To summarize, your implementations should like the standard utility tr does, 
+except that they have no options, characters like [, - and \ have no special 
+meaning in the operands, operand errors must be diagnosed, and your 
+implementations act on bytes rather than on (possibly multibyte) characters.
+
+1. Write a C transliteration program tr2b.c that uses getchar and putchar to 
+transliterate bytes as described above.
+2. Write a C program tr2u.c that uses read and write to transliterate bytes, 
+instead of using getchar and putchar. The nbyte arguments to read and write 
+should be 1, so that the program reads and writes single bytes at a time.
+3. Use the strace command to compare the system calls issued by your tr2b and 
+tr2u commands (a) when copying one file to another, and (b) when copying a 
+file to your terminal. Use a file that contains at least 5,000,000 bytes.
+4. Use the time command to measure how much faster one program is, compared 
+to the other, when copying the same amount of data.
+
+
+
+1. First of all, I wrote tr2b.c and tr2u.c, and they are in the separate files
+To transliterate, tr2b.c uses getchar() and putchar(), but tr2u.c uses read() 
+and write(). For both of the program, I checked the argument count 
+(should be 3), check that the length of 'from' and 'to' should be equal, and 
+check there's no duplicates in 'from'.
+
+
+
+2. Create a large file and create executable C file using gcc.
+
+    [classzde@lnxsrv06 ~]$ head --bytes=5000000 /dev/urandom > largefile.txt
+    [classzde@lnxsrv06 ~]$ gcc -std=c99 -o tr2b tr2b.c
+    [classzde@lnxsrv06 ~]$ gcc -std=c99 -o tr2u tr2u.c
+    [classzde@lnxsrv06 ~]$
+
+3/a Use the strace command to compare the system calls issued by your tr2b and 
+tr2u commands when copying one file to another. Use a file that contains at 
+least 5,000,000 bytes.
+
+    [classzde@lnxsrv06 ~]$ strace -c ./tr2b 'ab' 'xy' < largefile.txt > output
+    % time     seconds  usecs/call     calls    errors syscall
+    ------ ----------- ----------- --------- --------- ----------------
+      0.00    0.000000           0         2           read
+      0.00    0.000000           0         1           write
+      0.00    0.000000           0         2           open
+      0.00    0.000000           0         2           close
+      0.00    0.000000           0         4           fstat
+      0.00    0.000000           0         9           mmap
+      0.00    0.000000           0         4           mprotect
+      0.00    0.000000           0         1           munmap
+      0.00    0.000000           0         1           brk
+      0.00    0.000000           0         1         1 access
+      0.00    0.000000           0         1           execve
+      0.00    0.000000           0         1           arch_prctl
+    ------ ----------- ----------- --------- --------- ----------------
+    100.00    0.000000                    29         1 total
+    [classzde@lnxsrv06 ~]$ strace -c ./tr2u 'a' 'b' < largefile.txt > output
+    % time     seconds  usecs/call     calls    errors syscall
+    ------ ----------- ----------- --------- --------- ----------------
+     55.48   19.980882           4   5000000           write
+     44.52   16.036533           3   5000002           read
+      0.00    0.000000           0         2           open
+      0.00    0.000000           0         2           close
+      0.00    0.000000           0         2           fstat
+      0.00    0.000000           0         7           mmap
+      0.00    0.000000           0         4           mprotect
+      0.00    0.000000           0         1           munmap
+      0.00    0.000000           0         1           brk
+      0.00    0.000000           0         1         1 access
+      0.00    0.000000           0         1           execve
+      0.00    0.000000           0         1           arch_prctl
+    ------ ----------- ----------- --------- --------- ----------------
+    100.00   36.017415              10000024         1 total
+    [classzde@lnxsrv06 ~]$ 
+
+(We get 29 calls on tr2b and 10000024 calls on tr2u. tr2u are way more calls 
+than tr2b since r2u has more read and write. And also, tr2b was way faster 
+than tr2u did.)
+
+
+
+3/b 3. Use the strace command to compare the system calls issued by your tr2b 
+and tr2u commands when copying a file to your terminal. Use a file that 
+contains at least 5,000,000 bytes.
+
+    [classzde@lnxsrv06 ~]$ strace -c ./tr2b 'a' 'b' < largefile.txt
+    % time     seconds  usecs/call     calls    errors syscall
+    ------ ----------- ----------- --------- --------- ----------------
+     37.06    0.000053          53         1           execve
+     22.38    0.000032           4         9           mmap
+      8.39    0.000012           3         4           mprotect
+      6.99    0.000010           5         2           open
+      6.99    0.000010           3         4           fstat
+      4.90    0.000007           4         2           read
+      4.20    0.000006           6         1         1 access
+      3.50    0.000005           5         1           munmap
+      2.10    0.000003           3         1           write
+      2.10    0.000003           2         2           close
+      1.40    0.000002           2         1           arch_prctl
+      0.00    0.000000           0         1           brk
+    ------ ----------- ----------- --------- --------- ----------------
+    100.00    0.000143                    31         1 total
+    [classzde@lnxsrv06 ~]$ 
+    [classzde@lnxsrv06 ~]$ strace -c ./tr2u 'a' 'b' < largefile.txt 
+    % time     seconds  usecs/call     calls    errors syscall
+    ------ ----------- ----------- --------- --------- ----------------
+     55.48   19.980882           4   5000000           write
+     44.52   16.036533           3   5000002           read
+      0.00    0.000000           0         2           open
+      0.00    0.000000           0         2           close
+      0.00    0.000000           0         2           fstat
+      0.00    0.000000           0         7           mmap
+      0.00    0.000000           0         4           mprotect
+      0.00    0.000000           0         1           munmap
+      0.00    0.000000           0         1           brk
+      0.00    0.000000           0         1         1 access
+      0.00    0.000000           0         1           execve
+      0.00    0.000000           0         1           arch_prctl
+    ------ ----------- ----------- --------- --------- ----------------
+    100.00   36.017415              10000024         1 total
+    [classzde@lnxsrv06 ~]$ 
+
+(Instead of writing to a output file, these two command just copy the result 
+to the terminal. I got 31 for tr2b which is two more calls than 3/a, and 
+10000024 for tr2u which is same as 3/a)
+
+
+
+4. Use the time command to measure how much faster one program is, compared 
+to the other, when copying the same amount of data.
+
+    [classzde@lnxsrv06 ~]$ time ./tr2b 'a' 'b' < largefile.txt > output
+    real  0m0.004s
+    user  0m0.000s
+    sys 0m0.001s
+
+    [classzde@lnxsrv06 ~]$ time ./tr2u 'a' 'b' < largefile.txt > output
+    real  0m9.766s
+    user  0m1.191s
+    sys 0m8.481s
+
+    [classzde@lnxsrv06 ~]$ time ./tr2b 'a' 'b' < largefile.txt
+    real  0m0.002s
+    user  0m0.000s
+    sys 0m0.001s
+
+    [classzde@lnxsrv06 ~]$ time ./tr2u 'a' 'b' < largefile.txt
+    real  0m10.840s
+    user  0m1.232s
+    sys 0m7.866s
+
+(From observation, buffered I/O is way faster than unbuffered I/O as we 
+expected, no matter we choose to write the output into output file or copy 
+the result to the terminal.)
+
+
+
+
+Homework: Encrypted sort revisited
+
+Rewrite the sfrob program you wrote previously so that it uses system calls 
+rather than <stdio.h> to read standard input and write standard output. If 
+standard input is a regular file, your program should initially allocate 
+enough memory to hold all the data in that file all at once, rather than the 
+usual algorithm of reallocating memory as you go. However, if the regular 
+file grows while you are reading it, your program should still work, by 
+allocating more memory after the initial file size has been read.
+
+Your program should do one thing in addition to sfrob. If given the -f option, 
+your program should ignore case while sorting, by using the standard toupper 
+function to upper-case each byte after decrypting and before comparing the 
+byte. You can assume that each input byte represents a separate character; 
+that is, you need not worry about multi-byte encodings. As noted in its 
+specification, toupper's argument should be either EOF or a nonnegative value 
+that is at most UCHAR_MAX (as defined in <limits.h>); hence one cannot simply 
+pass a char value to toupper, as char is in the range CHAR_MIN..CHAR_MAX.
+
+Call the rewritten program sfrobu. Measure any differences in performance 
+between sfrob and sfrobu using the time command. Run your program on inputs of 
+varying numbers of input lines, and estimate the number of comparisons as a 
+function of the number of input lines.
+
+Also, write a shell script sfrobs that uses standard tr and sort to sort 
+encrypted files using a pipeline (that is, your script should not create any 
+temporary files, and should sort based on decrypted values just as sfrobu 
+does). Your shell script should also accept an -f option, with the same 
+meaning as with sfrobu. Use the time command to compare the overall 
+performance of sfrob, sfrobu, sfrobs, sfrobu -f, and sfrobs -f.
+
+
+1. After finishing the code, create the test file with 100, 1000, 10000 lines, 
+named test1, test2, test3, respectively, using command:
+
+    [classzde@lnxsrv06 ~]$ yes '*~BO *{_CIA *hXE]D *LER #@_GZY #E\\OX #^BO 
+    #FKPS #NEM\4' | head -n 100 > test1.txt
+    [classzde@lnxsrv06 ~]$ yes '*~BO *{_CIA *hXE]D *LER #@_GZY #E\\OX #^BO 
+    #FKPS #NEM\4' | head -n 1000 > test2.txt
+    [classzde@lnxsrv06 ~]$ yes '*~BO *{_CIA *hXE]D *LER #@_GZY #E\\OX #^BO 
+    #FKPS #NEM\4' | head -n 10000 > test3.txt
+
+Then I tested the following 5 cases, and the output was:
+
+1. sfrobs
+
+    [classzde@lnxsrv06 ~]$ time ./sfrobs  < test1.txt
+    real  0m0.006s
+    user  0m0.002s
+    sys 0m0.006s
+
+    [classzde@lnxsrv06 ~]$ time ./sfrobs  < test2.txt
+    real  0m0.012s
+    user  0m0.006s
+    sys 0m0.005s
+
+    [classzde@lnxsrv06 ~]$ time ./sfrobs  < test3.txt
+    real  0m0.042s
+    user  0m0.029s
+    sys 0m0.017s
+
+2. sfrobs -f
+
+    [classzde@lnxsrv06 ~]$ time ./sfrobs -f  < test1.txt
+    real  0m0.006s
+    user  0m0.002s
+    sys 0m0.005s
+
+    [classzde@lnxsrv06 ~]$ time ./sfrobs -f  < test2.txt
+    real  0m0.011s
+    user  0m0.008s
+    sys 0m0.004s
+
+    [classzde@lnxsrv06 ~]$ time ./sfrobs -f  < test3.txt
+    real  0m0.058s
+    user  0m0.041s
+    sys 0m0.022s
+
+3. sfrob
+
+    [classzde@lnxsrv06 ~]$ time ./sfrob < test1.txt
+    real  0m0.004s
+    user  0m0.001s
+    sys 0m0.001s
+
+    [classzde@lnxsrv06 ~]$ time ./sfrob < test2.txt
+    real  0m0.016s
+    user  0m0.011s
+    sys 0m0.003s
+
+    [classzde@lnxsrv06 ~]$ time ./sfrob < test3.txt
+    real  0m0.134s
+    user  0m0.104s
+    sys 0m0.019s
+
+4. sfrobu
+
+    [classzde@lnxsrv06 ~]$ time ./sfrobu < test1.txt
+    real  0m0.013s
+    user  0m0.001s
+    sys 0m0.011s
+
+    [classzde@lnxsrv06 ~]$ time ./sfrobu < test2.txt
+    real  0m0.104s
+    user  0m0.024s
+    sys 0m0.079s
+
+    [classzde@lnxsrv06 ~]$ time ./sfrobu < test3.txt
+    real  0m1.049s
+    user  0m0.248s
+    sys 0m0.795s
+
+5. sfrobu -f
+
+    [classzde@lnxsrv06 ~]$ time ./sfrobu -f < test1.txt
+    real  0m0.012s
+    user  0m0.003s
+    sys 0m0.009s
+
+    [classzde@lnxsrv06 ~]$ time ./sfrobu -f < test2.txt
+    real  0m0.109s
+    user  0m0.027s
+    sys 0m0.081s
+
+    [classzde@lnxsrv06 ~]$ time ./sfrobu -f < test3.txt
+    real  0m1.107s
+    user  0m0.291s
+    sys 0m0.808s
+
+After comparing these data, we can know the ranking from the fastest 
+to the slowest is:
+
+    sfrob
+    sfrobs
+    sfrobs -f
+    sfrobu
+    sfrobu -f
+
+We found out that sfrobu was way slower than sfrob as we expected, 
+since it needs more system calls.
+And we also notice that add -f option only made a little time difference 
+to the original command.
+
+

@@ -1,0 +1,690 @@
+Zhubo Deng
+605186231
+Lab 5
+
+PART 0: Chang PATH
+[classzde@lnxsrv06 ~]$ echo $PATH
+/usr/lib64/qt-3.3/bin:/u/eng/class/classzde/perl5/bin:/usr/local/bin:/usr/bin:
+/usr/X11R6/bin:/usr/local/cs/bin:/u/eng/class/classzde/bin
+[classzde@lnxsrv06 ~]$ export PATH=/usr/local/cs/bin:$PATH
+[classzde@lnxsrv06 ~]$ echo $PATH
+/usr/local/cs/bin:/usr/lib64/qt-3.3/bin:/u/eng/class/classzde/perl5/bin:/usr/
+local/bin:/usr/bin:/usr/X11R6/bin:/usr/local/cs/bin:/u/eng/class/classzde/bin
+[classzde@lnxsrv06 ~]$ 
+
+
+
+PART 1 (Problem Description):
+
+Keep a log in the file lab2.log of what you do in the lab so that you can 
+reproduce the results later. This should not merely be a transcript of what 
+you typed: it should be more like a true lab notebook, in which you briefly 
+note down what you did and what happened.
+
+For this laboratory we assume you're in the standard C or POSIX locale. The 
+shell command locale should output LC_CTYPE="C" or LC_CTYPE="POSIX". If it 
+doesn't, use the following shell command:
+export LC_ALL='C'
+and make sure locale outputs the right thing afterwards.
+
+We also assume the file words contains a sorted list of English words. Create 
+such a file by sorting the contents of the file /usr/share/dict/words on the 
+SEASnet GNU/Linux hosts, and putting the result into a file named words in 
+your working directory. To do that, you can use the sort command.
+
+Then, take a text file containing the HTML in this assignment's web page, and 
+run the following commands with that text file being standard input. Describe 
+generally what each command outputs (in particular, how its output differs 
+from that of the previous command), and why.
+
+tr -c 'A-Za-z' '[\n*]'
+tr -cs 'A-Za-z' '[\n*]'
+tr -cs 'A-Za-z' '[\n*]' | sort
+tr -cs 'A-Za-z' '[\n*]' | sort -u
+tr -cs 'A-Za-z' '[\n*]' | sort -u | comm - words
+tr -cs 'A-Za-z' '[\n*]' | sort -u | comm -23 - words
+
+
+
+1) Check locale
+
+[classzde@lnxsrv06 ~]$ locale
+LANG=en_US.UTF-8
+LC_CTYPE="en_US.UTF-8"
+LC_NUMERIC="en_US.UTF-8"
+LC_TIME="en_US.UTF-8"
+LC_COLLATE="en_US.UTF-8"
+LC_MONETARY="en_US.UTF-8"
+LC_MESSAGES="en_US.UTF-8"
+LC_PAPER="en_US.UTF-8"
+LC_NAME="en_US.UTF-8"
+LC_ADDRESS="en_US.UTF-8"
+LC_TELEPHONE="en_US.UTF-8"
+LC_MEASUREMENT="en_US.UTF-8"
+LC_IDENTIFICATION="en_US.UTF-8"
+LC_ALL=
+[classzde@lnxsrv06 ~]$ export LC_ALL='C'
+[classzde@lnxsrv06 ~]$ locale
+LANG=en_US.UTF-8
+LC_CTYPE="C"
+LC_NUMERIC="C"
+LC_TIME="C"
+LC_COLLATE="C"
+LC_MONETARY="C"
+LC_MESSAGES="C"
+LC_PAPER="C"
+LC_NAME="C"
+LC_ADDRESS="C"
+LC_TELEPHONE="C"
+LC_MEASUREMENT="C"
+LC_IDENTIFICATION="C"
+LC_ALL=C
+[classzde@lnxsrv06 ~]$ 
+
+
+
+2) Copy sorted /usr/share/dict/words into words file.
+And also, to check the file was created successfully.
+
+[classzde@lnxsrv06 ~]$ sort /usr/share/dict/words > words
+[classzde@lnxsrv06 ~]$ emacs words
+
+
+
+3) Download the webpage.
+
+[classzde@lnxsrv06 ~]$ wget https://web.cs.ucla.edu/classes/fall18/cs35L/
+assign/assign2.html
+--2018-10-16 11:42:36--  https://web.cs.ucla.edu/classes/fall18/cs35L/
+assign/assign2.html
+Resolving web.cs.ucla.edu (web.cs.ucla.edu)... 131.179.128.29
+Connecting to web.cs.ucla.edu (web.cs.ucla.edu)|131.179.128.29|:443... 
+connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 8668 (8.5K) [text/html]
+Saving to: 'assign2.html'
+
+100%[======================================>] 8,668       --.-K/s   in 0s  
+
+2018-10-16 11:42:36 (107 MB/s) - 'assign2.html' saved [8668/8668]
+
+
+
+4)
+4.1)
+tr -c 'A-Za-z' '[\n*]' < assign2.html 
+
+“tr [optional] [set1] [set2]”
+“tr” replace the elements in set1 with corresponding elements from set2
+“-c” means complement
+“tr -c” replaces the complement of set1 (not in ‘A-Za-z’; non-alpha char), 
+to set2 (\n*; blank lines)
+So it takes all the non-alpha to a blank line.
+
+/* OUTPUT
+[classzde@lnxsrv06 ~]$ tr -c 'A-Za-z' '[\n*]' < assign2.html
+
+
+DOCTYPE
+html
+
+PUBLIC
+
+
+
+
+W
+C
+
+DTD
+HTML
+*/
+
+
+
+4.2)
+tr -cs 'A-Za-z' '[\n*]' < assign2.html
+
+“-cs” means no repeats 
+So the difference from the last one is it ignores the repeating new lines.
+So if there are multiple non-alpha chars between two alpha chars, it will 
+only start one new line.
+
+/* OUTPUT
+[classzde@lnxsrv06 ~]$ tr -cs 'A-Za-z' '[\n*]' < assign2.html
+
+DOCTYPE
+html
+PUBLIC
+W
+C
+DTD
+HTML
+*/
+
+
+
+4.3)
+tr -cs 'A-Za-z' '[\n*]' < assign2.html | sort
+
+“|” (pipe line) means make the standard output of program 1 become the 
+standard input of program 2
+So this command takes the results of the previous command and sort it in 
+alpha order.
+
+/* OUTPUT
+[classzde@lnxsrv06 ~]$ tr -cs 'A-Za-z' '[\n*]' < assign2.html | sort
+
+A
+A
+A
+A
+A
+A
+A
+A
+A
+A
+ALL
+ASCII
+ASCII
+ASCII
+ASCII
+All
+Are
+Assignment
+Assignment
+Assume
+Automate
+B
+B
+B
+C
+C
+C
+C
+CTYPE
+CTYPE
+Check
+Content
+Count
+Create
+Create
+*/
+
+
+
+4.4)
+tr -cs 'A-Za-z' '[\n*]' < assign2.html | sort -u
+
+“-u” means unique, output only the first one for duplicate records
+So the difference from the last one is this command eliminate the 
+repeating output.
+
+/* OUTPUT
+[classzde@lnxsrv06 ~]$ tr -cs 'A-Za-z' '[\n*]' < assign2.html | sort -u
+
+A
+ALL
+ASCII
+All
+Are
+Assignment
+Assume
+Automate
+B
+C
+CTYPE
+Check
+Content
+Count
+Create
+D
+DOCTYPE
+DTD
+*/
+
+
+
+4.5)
+tr -cs 'A-Za-z' '[\n*]' < assign2.html | sort -u | comm - words
+
+“comm” means comparing sorted files line by line
+“-”: read from STDIN
+There’s another pipe line, so this command means that it takes the previous 
+result as STDIN, to compare with words file, and output three columns 
+separated by a TAB:
+	Column one: lines unique to FILE1 
+	Column two contains lines unique to FILE2 
+	Column three contains lines common to both files.
+
+/* OUTPUT
+[classzde@lnxsrv06 ~]$ tr -cs 'A-Za-z' '[\n*]' < assign2.html | sort -u | 
+comm - words
+
+	1080
+	10-point
+	10th
+	.
+	.
+	.
+	8th
+	9-point
+	9th
+		a
+	-a
+	a-
+	a.
+	a'
+		A
+	A.
+	a1
+	A1
+	A-1
+*/
+
+
+
+4.6)
+tr -cs 'A-Za-z' '[\n*]' < assign2.html | sort -u | comm -23 - words
+
+“-23”: suppress the second and the third column (lines unique to F2 & line 
+common to both files)
+So the difference from the previous is only the first column shows up (lines 
+unique to FILE1).
+
+/* OUTPUT
+[classzde@lnxsrv06 ~]$ tr -cs 'A-Za-z' '[\n*]' < assign2.html | sort -u | 
+comm -23 - words
+
+ALL
+All
+Are
+Assignment
+Assume
+Automate
+CTYPE
+Check
+Content
+Create
+DOCTYPE
+DTD
+*/
+
+
+
+PART 2 (Problem Description):
+Let's take the last command as the crude implementation of an English spelling 
+checker. Suppose we want to change it to be a spelling checker for Hawaiian, a 
+language whose traditional orthography has only the following letters (or 
+their capitalized equivalents):
+
+p k ' m n w l h a e i o u
+In this lab for convenience we use ASCII apostrophe (') to represent the 
+Hawaiian ‘okina (‘); it has no capitalized equivalent.
+
+Create in the file hwords a simple Hawaiian dictionary containing a copy of 
+all the Hawaiian words in the tables in "English to Hawaiian", an introductory 
+list of words. Use Wget to obtain your copy of that web page. Extract these 
+words systematically from the tables in "English to Hawaiian". Assume that 
+each occurrence of "<tr> <td>Eword</td> <td>Hword</td>" contains a Hawaiian 
+word in the Hword position. Treat upper case letters as if they were lower 
+case; treat "<u>a</u>" as if it were "a", and similarly for other letters; 
+and treat ` (ASCII grave accent) as if it were ' (ASCII apostrophe, which we 
+use to represent ‘okina). Some entries, for example "H<u>a</u>lau, kula", 
+contain spaces or commas; treat them as multiple words (in this case, as 
+"halau" and "kula"). You may find that some of the entries are improperly 
+formatted and contain English rather than Hawaiian; to fix this problem reject 
+any entries that contain non-Hawaiian letters after the abovementioned 
+substitutions are performed. Sort the resulting list of words, removing any 
+duplicates. Do not attempt to repair any remaining problems by hand; just 
+use the systematic rules mentioned above. Automate the systematic rules into 
+a shell script buildwords, which you should copy into your log; it should read 
+the HTML from standard input and write a sorted list of unique words to 
+standard output. For example, we should be able to run this script with a 
+command like this:
+
+cat foo.html bar.html | ./buildwords | less
+If the shell script has bugs and doesn't do all the work, your log should 
+record in detail each bug it has.
+
+Modify the last shell command shown above so that it checks the spelling 
+of Hawaiian rather than English, under the assumption that hwords is a 
+Hawaiian dictionary. Input that is upper case should be lower-cased before 
+it is checked against the dictionary, since the dictionary is in all 
+lower case.
+
+Check your work by running your Hawaiian spelling checker on this web 
+page (which you should also fetch with Wget), and on the Hawaiian dictionary 
+hwords itself. Count the number of "misspelled" English and Hawaiian words 
+on this web page, using your spelling checkers. Are there any words that 
+are "misspelled" as English, but not as Hawaiian? or "misspelled" as Hawaiian 
+but not as English? If so, give examples.
+
+
+
+1) Obtain the web page; check the downloaded file exist
+[classzde@lnxsrv06 ~]$ wget http://mauimapp.com/moolelo/hwnwdseng.htm
+[classzde@lnxsrv06 ~]$ emacs hwnwdseng.htm
+
+2) Create a file; start write scipt
+[classzde@lnxsrv06 ~]$ vim buildwords
+
+2.1) I am mainly using grep, awk, sed, tr commands to convert or extract "some 
+regular expression" to "other regular expression"
+
+2.2) Given "Assume that each occurrence of "<tr> <td>Eword</td> <td>Hword</td>"
+contains a Hawaiian word in the Hword position." I use grep command to extract 
+lines which have <td>Eword</td> <td>Hword</td> tags.
+
+In script, I put:
+grep -E '<td>.+<\/td>' |  \
+
+Then I saved the file and test it work or not.
+(add excutable attribute, execute buildwords file, explain later)
+
+[classzde@lnxsrv06 ~]$ chmod +x buildwords
+[classzde@lnxsrv06 ~]$ cat hwnwdseng.htm | ./buildwords > hwords
+[classzde@lnxsrv06 ~]$ emacs hwords
+
+    <td>Adopt</td>
+    <td>H<u>a</u>nai</td>
+    <td>Affection</td>
+    <td>Pumehana</td>
+    <td>Afternoon</td>
+    <td>Auinal<u>a</u></td>
+
+In emacs, it successfully shows all of the words with tag <td> and <\/td>
+Then I finished the rest of requirements of extracting.
+
+The following is copied from file “buildwords” shell scripting:
+
+#!/bin/sh
+
+# Comment
+
+grep -E '<td>.+<\/td>' |  \
+# only take the lines which contain <td>.+<\/td> from the webpage
+# and then output it
+# ".+" means regular expression that matches a character zero or more times
+# <td>.+<\/td>: matching between <td> and <\/td>
+
+awk 'NR % 2 == 0' | \
+# delete English words line; odd number lines
+
+sed 's/    <td>//g' | \
+# delete four spaces and <td> tags
+
+sed 's/<\/td>//g' |
+# delete <\/td> tags
+
+sed 's/<u>//g' | 
+# delete the <u> tags which means underline in the webpage
+
+sed 's/<\/u>//g' |
+# delete the <\/u> tags
+
+# right now we already deleted the HTML tags; only Hawaiian words left
+
+tr [:upper:] [:lower:] |
+# convert all the uppercae to the lowercase
+
+tr "\`" "\'" |
+# convert all the accent mark ` to '
+
+sed 's/,\s/\n/g' |
+# change all the combination of column and space ", " to a new line
+
+sed 's/\s/\n/g' |
+# change all the space " " to a new line
+
+sed '/[^pk'\''mnwlhaeiou]/d' |
+#tr -c "pk\'mnwlhaeiou" '[\n*]' |
+# convert the non-Hawaiian alpha to a blank line
+
+sed '/^$/d' |
+# delete the empty lines
+
+sort -u
+# sort and remove the duplicates
+
+# done with making Hawaiian dictionary
+ 
+End of the copy.
+
+
+
+3) Add the file attribute to executable
+[classzde@lnxsrv06 ~]$ ls -l
+-rw-r--r-- 1 classzde class      47 Oct 16 21:53 buildwords
+[classzde@lnxsrv06 ~]$ chmod +x buildwords
+[classzde@lnxsrv06 ~]$ ls -l
+-rwxr-xr-x 1 classzde class      47 Oct 16 21:53 buildwords
+
+
+
+4) Execute the "buildwords" to hwnwdsend.htm and write the output into "hwords"
+And also, check it wrote successfully
+[classzde@lnxsrv06 ~]$ cat hwnwdseng.htm | ./buildwords > hwords
+[classzde@lnxsrv06 ~]$ emacs hwords
+
+/* hwords shown in Emacs
+'a'ole
+'ae
+'aina
+'anakala
+'anake
+'apelila
+'apopo
+'aukake
+'ilio
+'iole
+'o
+.
+.
+.
+ua
+wa'a
+wahine
+wai
+wakea
+wauke
+wela
+wiki
+*/
+
+
+
+5) Misspelled words
+
+5.1) Misspelled English words
+
+5.1.1) Suppose the webpage is written in English, and the words that didn't 
+show up in "words" file are considered "misspelled"
+
+First, convert the webpage to a sorted word list (as I did in Part 1), then 
+convert all of the upper case to the lower case (since there are couple of 
+words written in UPPER CASE). Use "comm -23". The output gives the words that
+didn't exist in "word" file 
+
+There are 38 English words misspelled:
+
+[classzde@lnxsrv06 ~]$ tr -cs 'A-Za-z' '[\n*]' < assign2.html | 
+tr '[:upper:]' '[:lower:]' | sort -u | comm -23 - words
+
+basedefs
+buildwords
+charset
+cmp
+ctype
+doctype
+eggert
+eword
+halau
+href
+htm
+html
+http
+hwnwdseng
+hword
+hwords
+idx
+lau
+linux
+mauimapp
+moolelo
+ndash
+okina
+onlinepubs
+opengroup
+posix
+sameln
+seasnet
+td
+toc
+ul
+usr
+utf
+vandebogart
+wget
+wiki
+wikipedia
+www
+[classzde@lnxsrv06 ~]$ 
+
+
+
+5.1.2) Same as before, but assume some of them are actually Hawaiian,
+then we need to eliminate the Hawaiian words (use comm with "hwords")
+
+There are 35 English words misspelled:
+
+[classzde@lnxsrv06 ~]$ tr -cs 'A-Za-z' '[\n*]' < assign2.html | 
+tr '[:upper:]' '[:lower:]' | sort -u | comm -23 - words | comm -23 - hwords
+
+basedefs
+buildwords
+charset
+cmp
+ctype
+doctype
+eggert
+eword
+href
+htm
+html
+http
+hwnwdseng
+hword
+hwords
+idx
+linux
+mauimapp
+moolelo
+ndash
+okina
+onlinepubs
+opengroup
+posix
+sameln
+seasnet
+td
+toc
+ul
+usr
+utf
+vandebogart
+wget
+wikipedia
+www
+[classzde@lnxsrv06 ~]$ 
+
+
+
+5.2) Misspelled Hawaiian words
+
+5.2.1) We need to find all of the Hawaiian words by using 
+sed '/[^pk'\''mnwlhaeiou]/d' (delete the words that not considered as Hawaiian)
+Then we use comm to find out the words doesn't exist in "hwords"
+
+There are 37 Hawaiian words misspelled
+
+[classzde@lnxsrv06 ~]$ tr -cs 'A-Za-z' '[\n*]' < assign2.html | 
+tr '[:upper:]' '[:lower:]' | sed '/[^pk'\''mnwlhaeiou]/d' | sort -u | 
+comm -23 - hwords
+
+a
+all
+an
+awk
+en
+h
+hawaiian
+how
+in
+k
+keep
+l
+li
+like
+line
+link
+ln
+m
+mail
+mauimapp
+moolelo
+n
+name
+no
+non
+o
+okina
+on
+one
+p
+paul
+people
+u
+ul
+w
+we
+www
+
+
+
+5.2.2) Same as before, but assume some of them are actually English
+Then we need to eliminate the English words (use comm with "words")
+
+There are 5 misspelled Hawaiian words.
+
+[classzde@lnxsrv06 ~]$ tr -cs 'A-Za-z' '[\n*]' < assign2.html | 
+tr '[:upper:]' '[:lower:]' | sed '/[^pk'\''mnwlhaeiou]/d' | sort -u | 
+comm -23 - hwords | comm -23 - words
+
+mauimapp
+moolelo
+okina
+ul
+www
+[classzde@lnxsrv06 ~]$ 
+
+
+
+6) Finally, exit seasnet account and download "buildwords" and "hword" from 
+the server
+
+^[[AConnection to lnxsrv06.seas.ucla.edu closed.
+vpn-128-97-245-29:~ dengzhubo$ scp classzde@lnxsrv06.seas.ucla.edu:buildwords 
+~/Desktop/
+classzde@lnxsrv06.seas.ucla.edu's password: 
+buildwords                                                   100% 1138   
+314.1KB/s   00:00    
+vpn-128-97-245-29:~ dengzhubo$ scp classzde@lnxsrv06.seas.ucla.edu:hwords 
+~/Desktop/
+classzde@lnxsrv06.seas.ucla.edu's password: 
+hwords                                                       100% 1252   
+344.8KB/s   00:00    
+vpn-128-97-245-29:~ dengzhubo$ 
+
+

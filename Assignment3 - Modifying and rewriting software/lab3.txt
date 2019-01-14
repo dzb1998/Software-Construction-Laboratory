@@ -1,0 +1,531 @@
+Lab 3
+
+Zhubo Deng
+605186231
+
+
+Laboratory: Installing a small change to a big package
+
+Keep a log in the file lab3.txt of what you do in the lab so that you can 
+reproduce the results later. This should not merely be a transcript of what 
+you typed: it should be more like a true lab notebook, in which you briefly 
+note down what you did and what happened.
+
+You're helping to build an application containing a shell script that invokes 
+the ls command to get file status. Your application is running atop the Maroon 
+Chapeau Enterprise Linux 8 distribution, which uses the ls implementation 
+supplied by Coreutils 8.29. You've been running into the problem that some 
+users create a shell script la with the following contents:
+
+#!/bin/sh
+exec ls -a "$@"
+
+For these users the command la -A is therefore equivalent to ls -a -A. 
+Unfortunately, with Coreutils ls, the -a option always overrides the -A option 
+regardless of which option is given first, so the -A option has no effect in 
+la. For example, if the current directory has two files named .foo and bar, 
+the command la -A outputs four lines, one each for ., .., .foo, and bar. These 
+users want la -A to output just two lines instead, one for .foo and one for 
+bar. That is, for ls they want a later -A option to override any earlier -a 
+option, and vice versa.
+
+You've been asked to look into the problem and fix it.
+
+You discover that the problem is a known bug with Coreutils, Bug#30963. The 
+bug report has a patch intended for publication in a later Coreutils release; 
+see its Message #10. You don't want to wait for the later release to be 
+installed on your system, so you decide to build a copy of Coreutils 8.29 with 
+just this patch added, as follows:
+
+
+0) Change PATH
+
+[classzde@lnxsrv06 ~]$ echo $PATH
+/usr/lib64/qt-3.3/bin:/u/eng/class/classzde/perl5/bin:/usr/local/bin:/usr/bin:
+/usr/X11R6/bin:/usr/local/cs/bin:/u/eng/class/classzde/bin
+[classzde@lnxsrv06 ~]$ export PATH=usr/local/cs/bin:$PATH
+[classzde@lnxsrv06 ~]$ echo $PATH
+usr/local/cs/bin:/usr/lib64/qt-3.3/bin:/u/eng/class/classzde/perl5/bin:/usr/
+local/bin:/usr/bin:/usr/X11R6/bin:/usr/local/cs/bin:/u/eng/class/classzde/bin
+
+
+
+1) Grab the Coreutils 8.29 source code compressed tarball and verify its 
+signature with the GNU keyring by running the shell command gpg --verify 
+--keyring ./gnu-keyring.gpg coreutils-8.29.tar.xz.sig in your directory. Note 
+any problems with this verification, and briefly explain why they happen.
+
+[classzde@lnxsrv06 ~]$ wget ftp://ftp.gnu.org/gnu/coreutils/
+coreutils-8.29.tar.xz
+--2018-10-23 16:31:22--  ftp://ftp.gnu.org/gnu/coreutils/
+coreutils-8.29.tar.xz
+           => ‘coreutils-8.29.tar.xz’
+Resolving ftp.gnu.org (ftp.gnu.org)... 208.118.235.20, 2001:4830:134:3::b
+Connecting to ftp.gnu.org (ftp.gnu.org)|208.118.235.20|:21... connected.
+Logging in as anonymous ... Logged in!
+==> SYST ... done.    ==> PWD ... done.
+==> TYPE I ... done.  ==> CWD (1) /gnu/coreutils ... done.
+==> SIZE coreutils-8.29.tar.xz ... 5286588
+==> PASV ... done.    ==> RETR coreutils-8.29.tar.xz ... done.
+Length: 5286588 (5.0M) (unauthoritative)
+
+100%[======================================>] 5,286,588   5.09MB/s   in 1.0s
+
+2018-10-23 16:31:24 (5.09 MB/s) - ‘coreutils-8.29.tar.xz’ saved [5286588]
+
+[classzde@lnxsrv06 ~]$ wget ftp://ftp.gnu.org/gnu/coreutils/
+coreutils-8.29.tar.xz.sig
+[classzde@lnxsrv06 ~]$ wget https://ftp.gnu.org/gnu/gnu-keyring.gpg
+[classzde@lnxsrv06 ~]$ gpg --verify --keyring ./gnu-keyring.gpg 
+coreutils-8.29.tar.xz.sig
+gpg: Signature made Wed 27 Dec 2017 10:29:05 AM PST using RSA key ID 306037D9
+gpg: /u/eng/class/classzde/.gnupg/trustdb.gpg: trustdb created
+gpg: Good signature from "Pádraig Brady <P@draigBrady.com>"
+gpg:                 aka "Pádraig Brady <pbrady@redhat.com>"
+gpg:                 aka "Pádraig Brady <pixelbeat@gnu.org>"
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+Primary key fingerprint: 6C37 DC12 121A 5006 BC1D  B804 DF6F D971 3060 37D9
+[classzde@lnxsrv06 ~]$ 
+
+I downloaded the keyring and the signature. Since I'm not the owner, 
+thus the warning shows:
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+
+
+
+2) Compile and install your copy of Coreutils into a temporary directory of 
+your own. Note any problems you run into.
+
+2.1) Downloading "coreutils-8.29.tar.xz" by using wget
+
+[classzde@lnxsrv06 ~]$ wget ftp://ftp.gnu.org/gnu/coreutils/
+coreutils-8.29.tar.xz
+--2018-10-23 16:31:22--  ftp://ftp.gnu.org/gnu/coreutils/
+coreutils-8.29.tar.xz
+           => ‘coreutils-8.29.tar.xz’
+Resolving ftp.gnu.org (ftp.gnu.org)... 208.118.235.20, 2001:4830:134:3::b
+Connecting to ftp.gnu.org (ftp.gnu.org)|208.118.235.20|:21... connected.
+Logging in as anonymous ... Logged in!
+==> SYST ... done.    ==> PWD ... done.
+==> TYPE I ... done.  ==> CWD (1) /gnu/coreutils ... done.
+==> SIZE coreutils-8.29.tar.xz ... 5286588
+==> PASV ... done.    ==> RETR coreutils-8.29.tar.xz ... done.
+Length: 5286588 (5.0M) (unauthoritative)
+
+100%[======================================>] 5,286,588   5.09MB/s   in 1.0s
+
+2018-10-23 16:31:24 (5.09 MB/s) - ‘coreutils-8.29.tar.xz’ saved [5286588]
+
+
+2.2) After downloading, I Untar and Unzip the "coreutils-8.29.tar.xz" file,
+and to make sure I untar and unzip successfully, and I read the "INSTALL" 
+instruction in ~/coreutils-8.29
+
+[classzde@lnxsrv06 ~]$ tar -xf coreutils-8.29.tar.xz
+[classzde@lnxsrv06 ~]$ ls
+assign1.html               Desktop       exer3.html       junk       testsameln
+assign2.html               Documents     exer3.html~      key1.txt   testscipt
+assign2.html.1             Downloads     exer4.diff       key1.txt~  tr
+buildwords                 #exer1.html#  exer4.html       lab2.log   words
+buildwords~                exer1.html    exer4.html~      nsdefault  words_d
+coreutils-8.29             exer2.diff    gnu-keyring.gpg  perl5
+coreutils-8.29.tar.xz      exer2.html    hwnwdseng.htm    sameln
+coreutils-8.29.tar.xz.1    exer2.html~   hwords           samelnmy
+coreutils-8.29.tar.xz.sig  exer3.diff    #hwords#         tempass3
+[classzde@lnxsrv06 ~]$ cd coreutils-8.29/
+[classzde@lnxsrv06 ~/coreutils-8.29]$ ls
+ABOUT-NLS       ChangeLog      GNUmakefile  Makefile.in  THANKS
+aclocal.m4      configure      init.cfg     man          thanks-gen
+AUTHORS         configure.ac   INSTALL      NEWS         THANKS.in
+bootstrap       COPYING        lib          po           THANKS-to-translators
+bootstrap.conf  dist-check.mk  m4           README       THANKStt.in
+build-aux       doc            maint.mk     src          TODO
+cfg.mk          gnulib-tests   Makefile.am  tests
+[classzde@lnxsrv06 ~/coreutils-8.29]$ emacs INSTALL
+
+
+2.3) After reading the "INSTALL" instruction, in order to custimized the install
+directory, I used "./configure --prefix ~/coreutilsInstall" command.
+
+[classzde@lnxsrv06 ~]$ ls
+assign1.html               Desktop       exer3.html       junk       testsameln
+assign2.html               Documents     exer3.html~      key1.txt   testscipt
+assign2.html.1             Downloads     exer4.diff       key1.txt~  tr
+buildwords                 #exer1.html#  exer4.html       lab2.log   words
+buildwords~                exer1.html    exer4.html~      nsdefault  words_d
+coreutils-8.29             exer2.diff    gnu-keyring.gpg  perl5
+coreutils-8.29.tar.xz      exer2.html    hwnwdseng.htm    sameln
+coreutils-8.29.tar.xz.1    exer2.html~   hwords           samelnmy
+coreutils-8.29.tar.xz.sig  exer3.diff    #hwords#         tempass3
+[classzde@lnxsrv06 ~]$ mkdir coreutilsInstall/
+[classzde@lnxsrv06 ~]$ cd coreutils-8.29/
+[classzde@lnxsrv06 ~/coreutils-8.29]$ ./configure --prefix=~/coreutilsInstall
+configure: error: expected an absolute directory name for --prefix: 
+~/coreutilsInstall
+[classzde@lnxsrv06 ~/coreutils-8.29]$ ./configure --prefix ~/coreutilsInstall
+checking for a BSD-compatible install... /usr/bin/install -c
+checking whether build environment is sane... yes
+checking for a thread-safe mkdir -p... /usr/bin/mkdir -p
+.
+.
+.
+checking where the gettext function comes from... libc
+checking for a traditional french locale... (cached) fr_FR
+checking that generated files are newer than configure... done
+configure: creating ./config.status
+config.status: creating Makefile
+config.status: creating po/Makefile.in
+config.status: creating gnulib-tests/Makefile
+config.status: creating lib/config.h
+config.status: executing depfiles commands
+config.status: executing po-directories commands
+config.status: creating po/POTFILES
+config.status: creating po/Makefile
+[classzde@lnxsrv06 ~/coreutils-8.29]$ 
+
+
+2.4) To install, use "make" and "make install" commands.
+
+
+[classzde@lnxsrv06 ~]$ cd coreutils-8.29/
+[classzde@lnxsrv06 ~/coreutils-8.29]$ make
+make  all-recursive
+make[1]: Entering directory '/w/home.04/class/classzde/coreutils-8.29'
+Making all in po
+make[2]: Entering directory '/w/home.04/class/classzde/coreutils-8.29/po'
+.
+.
+.
+make[3]: Leaving directory '/w/home.04/class/classzde/coreutils-8.29/
+gnulib-tests'
+make[2]: Leaving directory '/w/home.04/class/classzde/coreutils-8.29/
+gnulib-tests'
+make[1]: Leaving directory '/w/home.04/class/classzde/coreutils-8.29'
+[classzde@lnxsrv06 ~/coreutils-8.29]$
+[classzde@lnxsrv06 ~/coreutils-8.29]$
+[classzde@lnxsrv06 ~/coreutils-8.29]$ make install
+make  install-recursive
+make[1]: Entering directory '/w/home.04/class/classzde/coreutils-8.29'
+Making install in po
+make[2]: Entering directory '/w/home.04/class/classzde/coreutils-8.29/po'
+installing af.gmo as /u/eng/class/classzde/coreutilsInstall/share/locale/
+af/LC_MESSAGES/coreutils.mo
+installing af.gmo link as /u/eng/class/classzde/coreutilsInstall/share/
+locale/af/LC_TIME/coreutils.mo
+installing be.gmo as /u/eng/class/classzde/coreutilsInstall/share/
+locale/be/LC_MESSAGES/coreutils.mo
+.
+.
+.
+make[3]: Leaving directory '/w/home.04/class/classzde/coreutils-8.29/
+gnulib-tests'
+make[2]: Leaving directory '/w/home.04/class/classzde/coreutils-8.29/
+gnulib-tests'
+make[1]: Leaving directory '/w/home.04/class/classzde/coreutils-8.29'
+[classzde@lnxsrv06 ~/coreutils-8.29]$
+[classzde@lnxsrv06 ~/coreutils-8.29]$
+
+2.5) Right now we install the coreutils successfully.
+
+
+3. Reproduce the bug on your machine with the unmodified version of coreutils.
+
+Go to the directory ~/coreutilsInstall/bin/, and reproduce the bug.
+Here we will use ./ls in the current bin rather than doing ls.
+To reproduce the bug, first we try ./ls -a and ./ls -A and ./ls -a -A
+We found out that ./ls -a and ./ls -a -A have ". and .. files",
+but ./ls -A don't have them.
+For the command ./ls -a -A, -a was not supposed to override -A.
+We want ./ls -a -A to avoid showing ". and .. files"
+
+[classzde@lnxsrv06 ~/coreutils-8.29]$ cd ..
+[classzde@lnxsrv06 ~]$ cd coreutilsInstall/
+[classzde@lnxsrv06 ~/coreutilsInstall]$ ls
+bin  libexec  share
+[classzde@lnxsrv06 ~/coreutilsInstall]$ cd bin/
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$ ./ls
+'['	    cut         fold	  mknod      ptx	 sleep	   true
+ b2sum	    date        groups	  mktemp     pwd	 sort	   truncate
+ base32     dd	        head	  mv	     readlink	 split	   tsort
+ base64     df	        hostid	  nice	     realpath	 stat	   tty
+ basename   dir         id	  nl	     rm		 stdbuf    uname
+ cat	    dircolors   install   nohup      rmdir	 stty	   unexpand
+ chcon	    dirname     join	  nproc      runcon	 sum	   uniq
+ chgrp	    du	        kill	  numfmt     seq	 sync	   unlink
+ chmod	    echo        link	  od	     sha1sum	 tac	   uptime
+ chown	    env         ln	  paste      sha224sum	 tail	   users
+ chroot     expand      logname   pathchk    sha256sum	 tee	   vdir
+ cksum	    expr        ls	  pinky      sha384sum	 test	   wc
+ comm	    factor      md5sum	  pr	     sha512sum	 timeout   who
+ cp	    false       mkdir	  printenv   shred	 touch	   whoami
+ csplit     fmt         mkfifo	  printf     shuf	 tr	   yes
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$ 
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$ 
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$ ./ls -a
+ .	    chroot      du	 id	   mktemp    printenv	 sha256sum   sync       
+ ..	    cksum       echo	 install   mv	     printf	 sha384sum   tac        
+'['	    comm        env	 join	   nice      ptx	 sha512sum   tail       
+ b2sum	    cp	        expand	 kill	   nl	     pwd	 shred	     tee  
+ base32     csplit      expr	 link	   nohup     readlink	 shuf	     
+ base64     cut         factor	 ln	   nproc     realpath	 sleep	     time
+ basename   date        false	 logname   numfmt    rm		 sort	     touch
+ cat	    dd	        fmt	 ls	   od	     rmdir	 split	     tr         wc
+ chcon	    df	        fold	 md5sum    paste     runcon	 stat	     true
+ chgrp	    dir         groups	 mkdir	   pathchk   seq	 stdbuf        
+ chmod	    dircolors   head	 mkfifo    pinky     sha1sum	 stty	     
+ chown	    dirname     hostid	 mknod	   pr	     sha224sum	 sum	     
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$ 
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$ 
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$ ./ls -A
+'['	    comm        env	  join	    nice       ptx	   sha512sum   tail	  uniq
+ b2sum	    cp	        expand	  kill	    nl	       pwd	   shred       tee
+ base32     csplit      expr	  link	    nohup      readlink    shuf       
+ base64     cut         factor	  ln	    nproc      realpath    sleep      
+ basename   date        false	  logname   numfmt     rm	   sort       
+ cat	    dd	        fmt	  ls	    od	       rmdir	   split       
+ chcon	    df	        fold	  md5sum    paste      runcon	   stat        
+ chgrp	    dir         groups	  mkdir     pathchk    seq	   stdbuf    
+ chmod	    dircolors   head	  mkfifo    pinky      sha1sum	   stty      
+ chown	    dirname     hostid	  mknod     pr	       sha224sum   sum	     
+ chroot     du	        id	  mktemp    printenv   sha256sum   sync      
+ cksum	    echo        install   mv	    printf     sha384sum   tac	   
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$ 
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$ 
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$ ./ls -a -A
+ .	    csplit      fold	  mktemp     readlink	 stat	    uname
+ ..	    cut         groups	  mv	     realpath	 stdbuf     unexpand
+'['	    date        head	  nice	     rm		 stty	    uniq
+ b2sum	    dd	        hostid	  nl	     rmdir	 sum	    unlink
+ base32     df	        id	  nohup      runcon	 sync	    uptime
+ base64     dir         install   nproc      seq	 tac	    users
+ basename   dircolors   join	  numfmt     sha1sum	 tail	    vdir
+ cat	    dirname     kill	  od	     sha224sum	 tee	    wc
+ chcon	    du	        link	  paste      sha256sum	 test	    who
+ chgrp	    echo        ln	  pathchk    sha384sum	 timeout    whoami
+ chmod	    env         logname   pinky      sha512sum	 touch	    yes
+ chown	    expand      ls	  pr	     shred	 tr
+ chroot     expr        md5sum	  printenv   shuf	 true
+ cksum	    factor      mkdir	  printf     sleep	 truncate
+ comm	    false       mkfifo	  ptx	     sort	 tsort
+ cp	    fmt         mknod	  pwd	     split	 tty
+
+
+
+4. Apply the patch of Bug#30963 Message #10.
+
+Here we gonna apply the patch to the original file.
+I downloaded the patch from the webpage (.patch file), and then use
+patch < ls.patch to patch to ls.c file.
+Since this patch file was generated by diff command, so it fit the 
+original ls.c file.
+The out put shows it patched successfully.
+
+
+[classzde@lnxsrv06 ~/coreutils-8.29/src]$ patch -p[num] < ls.diff
+patch: **** strip count '[num]' is not a number
+[classzde@lnxsrv06 ~/coreutils-8.29/src]$ emacs ls.diff
+[classzde@lnxsrv06 ~/coreutils-8.29/src]$ rm ls.diff
+[classzde@lnxsrv06 ~/coreutils-8.29/src]$ emacs ls.patch
+[classzde@lnxsrv06 ~/coreutils-8.29/src]$ patch < ls.patch
+can't find file to patch at input line 23
+Perhaps you should have used the -p or --strip option?
+The text leading up to this was:
+--------------------------
+|From 8969027d310e036f1c11f3d8f6da2e4a55ecb460 Mon Sep 17 00:00:00 2001
+|From: Paul Eggert <eggert@cs.ucla.edu>
+|Date: Tue, 27 Mar 2018 14:55:22 -0700
+|Subject: [PATCH] ls: -A now overrides -a
+|
+|Problem reported by Karl Berry (Bug#30963).
+|* NEWS: Mention this.
+|* src/ls.c (decode_switches): Implement this.
+|* tests/ls/a-option.sh: New file.
+|* tests/local.mk (all_tests): Add it.
+|---
+| NEWS                 |  3 +++
+| src/ls.c             |  3 +--
+| tests/local.mk       |  1 +
+| tests/ls/a-option.sh | 27 +++++++++++++++++++++++++++
+| 4 files changed, 32 insertions(+), 2 deletions(-)
+| create mode 100755 tests/ls/a-option.sh
+|
+|diff --git a/NEWS b/NEWS
+|index 351a0827b..207e785b3 100644
+|--- a/NEWS
+|+++ b/NEWS
+--------------------------
+File to patch: ls.c
+patching file ls.c
+Hunk #1 FAILED at 4.
+1 out of 1 hunk FAILED -- saving rejects to file ls.c.rej
+patching file ls.c
+Hunk #1 succeeded at 1900 (offset -3 lines).
+patching file local.mk
+Hunk #1 FAILED at 575.
+1 out of 1 hunk FAILED -- saving rejects to file local.mk.rej
+patching file a-option.sh
+[classzde@lnxsrv06 ~/coreutils-8.29/src]$ 
+
+
+
+5. Type the command make at the top level of your source tree, so that you 
+build (but do not install) the fixed version. For each command that gets 
+executed, explain why it needed to be executed (or say that it wasn't neeeded).
+
+Right now we need to re-install the coreutils so that we can use the 
+patched version of it.
+I did "make" and "make install" commands to reinstall.
+
+
+[classzde@lnxsrv06 ~/coreutils-8.29/src]$ emacs ls.c
+[classzde@lnxsrv06 ~/coreutils-8.29/src]$ cd ..
+[classzde@lnxsrv06 ~/coreutils-8.29]$ make
+make  all-recursive
+make[1]: Entering directory '/w/home.04/class/classzde/coreutils-8.29'
+Making all in po
+make[2]: Entering directory '/w/home.04/class/classzde/coreutils-8.29/po'
+.
+.
+.
+make[1]: Leaving directory '/w/home.04/class/classzde/coreutils-8.29'
+[classzde@lnxsrv06 ~/coreutils-8.29]$
+[classzde@lnxsrv06 ~/coreutils-8.29]$
+[classzde@lnxsrv06 ~/coreutils-8.29]$ make install
+make  install-recursive
+make[1]: Entering directory '/w/home.04/class/classzde/coreutils-8.29'
+Making install in po
+make[2]: Entering directory '/w/home.04/class/classzde/coreutils-8.29/po'
+installing af.gmo as /u/eng/class/classzde/coreutilsInstall/share/locale/af/
+LC_MESSAGES/coreutils.mo
+installing af.gmo link as /u/eng/class/classzde/coreutilsInstall/share/locale/
+af/LC_TIME/coreutils.mo
+installing be.gmo as /u/eng/class/classzde/coreutilsInstall/share/locale/be/
+LC_MESSAGES/coreutils.mo
+.
+.
+.
+make[2]: Leaving directory '/w/home.04/class/classzde/coreutils-8.29/
+gnulib-tests'
+make[1]: Leaving directory '/w/home.04/class/classzde/coreutils-8.29'
+[classzde@lnxsrv06 ~/coreutils-8.29]$
+[classzde@lnxsrv06 ~/coreutils-8.29]$
+
+From here, we knew it re-installed successfully.
+
+
+6. Make sure your change fixes the bug, by testing that the modified ls works 
+and that the installed ls doesn't. Use the test case that comes with the patch.
+
+Right now, we successfully make this "ls" command baced on the order of 
+option "-a" and "-A"
+That is: 
+If -A comes later like "./ls -a -A", it will do "./ls -A", 
+without showing ". and .. file"
+If -a comes later like "./ls -A -a", it will do "./ls -a", 
+showing ". and .. file"
+
+
+[classzde@lnxsrv06 ~/coreutils-8.29]$ cd ..
+[classzde@lnxsrv06 ~]$ cd coreutilsInstall/
+[classzde@lnxsrv06 ~/coreutilsInstall]$ ls
+bin  libexec  share
+[classzde@lnxsrv06 ~/coreutilsInstall]$ cd bin/
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$ ls -a
+ .          chroot      du       id        mktemp    printenv    sha256sum 
+ ..         cksum       echo     install   mv        printf      sha384sum  
+'['         comm        env      join      nice      ptx         sha512sum   
+ b2sum      cp          expand   kill      nl        pwd         shred       
+ base32     csplit      expr     link      nohup     readlink    shuf       
+ base64     cut         factor   ln        nproc     realpath    sleep      
+ basename   date        false    logname   numfmt    rm          sort        
+ cat        dd          fmt      ls        od        rmdir       split      
+ chcon      df          fold     md5sum    paste     runcon      stat       
+ chgrp      dir         groups   mkdir     pathchk   seq         stdbuf     
+ chmod      dircolors   head     mkfifo    pinky     sha1sum     stty       
+ chown      dirname     hostid   mknod     pr        sha224sum   sum        
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$ ls -A
+'['         comm        env       join      nice       ptx         sha512sum  
+ b2sum      cp          expand    kill      nl         pwd         shred      
+ base32     csplit      expr      link      nohup      readlink    shuf       
+ base64     cut         factor    ln        nproc      realpath    sleep      
+ basename   date        false     logname   numfmt     rm          sort       
+ cat        dd          fmt       ls        od         rmdir       split     
+ chcon      df          fold      md5sum    paste      runcon      stat        
+ chgrp      dir         groups    mkdir     pathchk    seq         stdbuf     
+ chmod      dircolors   head      mkfifo    pinky      sha1sum     stty      
+ chown      dirname     hostid    mknod     pr         sha224sum   sum       
+ chroot     du          id        mktemp    printenv   sha256sum   sync      
+ cksum      echo        install   mv        printf     sha384sum   tac        
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$ ./ls -a -A
+'['	    comm        env	  join	    nice       ptx	   sha512sum   tail	 
+ b2sum	    cp	        expand	  kill	    nl	       pwd	   shred       
+ base32     csplit      expr	  link	    nohup      readlink    shuf  
+ base64     cut         factor	  ln	    nproc      realpath    sleep 
+ basename   date        false	  logname   numfmt     rm	   sort       
+ cat	    dd	        fmt	  ls	    od	       rmdir	   split     
+ chcon	    df	        fold	  md5sum    paste      runcon	   stat    
+ chgrp	    dir         groups	  mkdir     pathchk    seq	   stdbuf     
+ chmod	    dircolors   head	  mkfifo    pinky      sha1sum	   stty      
+ chown	    dirname     hostid	  mknod     pr	       sha224sum   sum	     
+ chroot     du	        id	  mktemp    printenv   sha256sum   sync        
+ cksum	    echo        install   mv	    printf     sha384sum   tac	  
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$ ./ls -A -a
+ .          chroot      du       id        mktemp    printenv    sha256sum  
+ ..         cksum       echo     install   mv        printf      sha384sum  
+'['         comm        env      join      nice      ptx         sha512sum  
+ b2sum      cp          expand   kill      nl        pwd         shred      
+ base32     csplit      expr     link      nohup     readlink    shuf      
+ base64     cut         factor   ln        nproc     realpath    sleep     
+ basename   date        false    logname   numfmt    rm          sort       
+ cat        dd          fmt      ls        od        rmdir       split      
+ chcon      df          fold     md5sum    paste     runcon      stat       
+ chgrp      dir         groups   mkdir     pathchk   seq         stdbuf     
+ chmod      dircolors   head     mkfifo    pinky     sha1sum     stty      
+ chown      dirname     hostid   mknod     pr        sha224sum   sum      
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$ 
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$
+[classzde@lnxsrv06 ~/coreutilsInstall/bin]$
+
+
+
+Q1. Does the patch improve the performance of ls or make it worse? Briefly 
+explain.
+
+This patch improved the profermance because now the "ls" command is based on 
+the option order, that is which of -a -A comes first.
+
+
+Q2. If your company adopts this patched version of Coreutils instead of the 
+default one, what else should you watch out for? Might this new version of 
+Coreutils introduce other problems with your application?
+
+No, it won’t cause any problem.
+As shown in the patch:
+	 NEWS                 |  3 +++
+	 src/ls.c             |  3 +--
+	 tests/local.mk       |  1 +
+	 tests/ls/a-option.sh | 27 +++++++++++++++++++++++++++
+	 4 files changed, 32 insertions(+), 2 deletions(-)
+	 create mode 100755 tests/ls/a-option.sh
+This patch modified the original code and added two other new files which show 
+the new version of “ls -a -A” runs successfully.
+This won’t introduce other problem with the application.
+Moreover, if other commands are also using overiding but not in the option 
+order, we should also watch out those commands and patch them as we did for 
+"ls" command.
+
+
+
+
+
+
+
+
+

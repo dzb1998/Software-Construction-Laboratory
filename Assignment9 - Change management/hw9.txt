@@ -1,0 +1,127 @@
+HW 9
+
+Homework: Verifying and publishing a backported change
+
+You’re happy with the code that you wrote in your lab, but now you’d like to 
+publish this patch, in a form similar to that presented in the original 
+patch, so that others can use it.
+
+1. Maintain a file hw9.txt that logs the actions you do in solving the 
+homework. This is like your lab notebook lab9.txt, except it’s for the 
+homework instead of the lab.
+
+I created this file.
+
+
+2. Check out version 3.0 of Diffutils from your repository, into a new branch 
+named “quote”.
+
+	[classzde@lnxsrv06 ~/diffutils]$ git checkout v3.0 -b quote
+
+
+3. Install your change into this new branch, by running the patch command with 
+your patch quote-3.0-patch.txt as input.
+
+	[classzde@lnxsrv06 ~/diffutils]$ patch -p1 < quote-3.0-patch.txt
+
+	patching file src/cmp.c
+	patching file src/diff.c
+	patching file src/diff3.c
+	patching file src/dir.c
+	patching file src/sdiff.c
+	patching file src/util.c
+
+	These commands run successfully.
+
+
+4. Learn how to use the Emacs function add-change-log-entry-other-window 
+(C-x 4 a).
+
+I learned how to use the Emacs function add-change-log-entry-other-window 
+(C-x 4 a).
+
+
+5. Use this Emacs function to compose an appropriate ChangeLog entry for your 
+patch, by adapting the change log from the original patch.
+
+(Make ChangeLog respectively)
+
+	emacs src/cmp.c
+	C-x 4 a
+	C-x C-c y
+	emacs src/diff.c
+	C-x 4 a
+	C-x C-c y
+	emacs src/diff3.c
+	C-x 4 a
+	C-x C-c y
+	emacs src/dir.c
+	C-x 4 a
+	C-x C-c y
+	emacs src/sdiff.c
+	C-x 4 a
+	C-x C-c y
+	emacs src/util.c
+	C-x 4 a
+	C-x C-c y
+
+
+6. Commit your changes to the new branch, using the ChangeLog entry as the 
+commit message.
+
+	git commit -aF src/ChangeLog
+
+
+7. Use the command “git format-patch” to generate a file formatted-patch.txt. 
+This patch should work without having to fix things by hand afterwards.
+
+	git format-patch -1 --stdout > formatted-patch.txt
+
+
+8. Your teaching assistant will assign you a partner, who will also generate a 
+patch. Verify that your partner's patch works, by checking out version 3.0 
+again into a new temporary branch partner, applying the patch with the command 
+“git am”, and building the resulting system, checking that it works with 
+“make check”.
+
+After making the formatted-patch.txt file, I start to conpare my file with my 
+partner, Zhiying Li. I checked into a new branch called 'zhiying', and I use am to 
+apply his patch, and it ran successfully.
+
+	git checkout -b zhiying v3.0
+	git am formatted-patch-partner.txt
+
+Then I built the patch:
+
+	./bootstrap
+	./configure
+	make
+	make check
+
+
+9. Verify that your ChangeLog entry works, by running the command 
+“make distdir” and inspecting the resulting diffutils*/ChangeLog file.
+
+To verify the ChangeLog worked, I uaed make distdir, and we check the result,
+diffutils-3.0.1-ac7c/ directory. The ouput is there, and patch on his was successful. 
+	
+	make distdir
+	emacs diffutils-3.0.1-ac7c/ChangeLog
+
+
+10. There is a copy of the GNU Emacs git repository's master branch on SEASnet 
+in the directory ~eggert/src/gnu/emacs. Run the command gitk on it, and find 
+the newest merge that is not newer than 2015-01-25. Take a screenshot 
+gitk-screenshot.png of your view of the mergepoint, and in an ASCII text file 
+gitk-description.txt briefly describe the roles of subwindows that you see 
+in the screenshot.
+
+To get the window, we should re-log in with ssh -X, and then run the given commands.
+The newest merge is not newer than 2015-01-25.
+I took the screenshot, and describe it in the gitk-description.txt file.
+
+	ssh -X classzde@lnxsrv09.seas.ucla.edu
+	cd ~eggert/src/gnu/emacs
+	gitk
+
+

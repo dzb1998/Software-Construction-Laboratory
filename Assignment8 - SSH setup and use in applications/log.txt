@@ -1,0 +1,209 @@
+Lab 8 
+
+Since I am using a used BeagleBone, I need to flash it. So I followed the step 
+on the piazza to download the image to the mircoSD card and then flash my BeagleBone.
+
+After flashed the BeagleBone, I followed the setup step on the piazza 
+to setup my BeagleBone.
+
+To ssh into my BeagleBone, I need to connect to the wifi, and update.
+
+dengzhubodeMacBook-Pro:~ dengzhubo$ sudo ssh debian@192.168.6.2
+Password:
+debian@192.168.6.2's password: 
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Sun Oct  7 16:41:53 2018 from 192.168.6.1
+debian@beaglebone:~$ sudo connmanctl
+[sudo] password for debian: 
+Error getting VPN connections: The name net.connman.vpn was not provided by any connmanctl> exit
+debian@beaglebone:~$ sudo connmanctl
+Error getting VPN connections: The name net.connman.vpn was not provided by any connmanctl> enable wifi
+Error wifi: Already enabled
+connmanctl> scan wifi
+Scan completed for wifi
+connmanctl> services
+    CR3760-wifi          wifi_884aea62455b_4352333736302d77696669_managed_psk
+    BeagleBone090161     wifi_884aea62455b_426561676c65426f6e65303930313631_managed_none
+connmanctl> agent on
+Agent registered
+connmanctl> connect wifi_884aea62455b_4352333736302d77696669_managed_psk
+Agent RequestInput wifi_884aea62455b_4352333736302d77696669_managed_psk
+  Passphrase = [ Type=psk, Requirement=mandatory, Alternates=[ WPS ] ]
+  WPS = [ Type=wpspin, Requirement=alternate ]
+Passphrase? 3760ClassNet
+Connected wifi_884aea62455b_4352333736302d77696669_managed_psk
+connmanctl> quit
+debian@beaglebone:~$ ifconfig
+SoftAp0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.8.1  netmask 255.255.255.0  broadcast 192.168.8.255
+        inet6 fe80::b2d5:ccff:fefa:9189  prefixlen 64  scopeid 0x20<link>
+        ether b0:d5:cc:fa:91:89  txqueuelen 1000  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 78  bytes 17575 (17.1 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 4000  bytes 272480 (266.0 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 4000  bytes 272480 (266.0 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+usb0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.7.2  netmask 255.255.255.252  broadcast 192.168.7.3
+        inet6 fe80::b2d5:ccff:fefa:918b  prefixlen 64  scopeid 0x20<link>
+        ether b0:d5:cc:fa:91:8b  txqueuelen 1000  (Ethernet)
+        RX packets 436  bytes 69952 (68.3 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 316  bytes 61535 (60.0 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+usb1: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 192.168.6.2  netmask 255.255.255.252  broadcast 192.168.6.3
+        inet6 fe80::b2d5:ccff:fefa:918e  prefixlen 64  scopeid 0x20<link>
+        ether b0:d5:cc:fa:91:8e  txqueuelen 1000  (Ethernet)
+        RX packets 644  bytes 80307 (78.4 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 385  bytes 55999 (54.6 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+wlan0: flags=-28605<UP,BROADCAST,RUNNING,MULTICAST,DYNAMIC>  mtu 1500
+        inet 10.97.85.136  netmask 255.255.255.0  broadcast 10.97.85.255
+        inet6 fe80::8a4a:eaff:fe62:455b  prefixlen 64  scopeid 0x20<link>
+        ether 88:4a:ea:62:45:5b  txqueuelen 1000  (Ethernet)
+        RX packets 37  bytes 5187 (5.0 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 100  bytes 18367 (17.9 KiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+
+Then we need to update the BeagleBone by using following commands.
+
+	sudo apt-get update
+	sudo apt-get install xauth
+	sudo apt-get install xvfb
+
+And also, install the firefox
+
+	sudo apt-get install firefox-esr-l10n-en-gb
+
+Then, we need to check X11Forwarding, so set "no" to "yes" in those two files.
+	/etc/ssh/ssh_config 
+	/etc/ssh/sshd_config files 
+changed 'no' to 'yes' for all X11 Forwarding options.
+
+Finally, I checked if we all the OpenSSH files installed.
+
+	sudo apt-get install openssh-server
+	sudo apt-get install openssh-client
+
+Then we start the lab. I am doing this lab with Zhiying Li. We both acted server
+and client for each other.
+
+To generate public/private RSA key pairs, use this command:
+
+	ssh-keygen
+
+The key was saved to '~/.ssh/id_rsa'. Then, I typed 'mykey' as password. 
+
+Then, I added an user called zhiying and created a directory called zhiying. This was
+done using the following command:
+
+	sudo useradd -d /home/zhiying -m zhiying
+
+Then, I set the password for 'zhiying' by using:
+
+	sudo passwd zhiying
+
+Then, I cd to cd /home/zhiying/ directory and created a .ssh dir under that directory.
+
+	cd /home/zhiying/
+	sudo mkdir .ssh
+
+Afterthat, I changed the permmision for it so that he can log in and read and write.
+
+	sudo chown -R zhiying .ssh
+	sudo chmod 700 .ssh
+
+Then we finished setting up.
+And my IP address is 10.97.85.136 by using ifconfig command.
+
+	debian@beaglebone:~$ ifconfig
+	SoftAp0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+	        inet 192.168.8.1  netmask 255.255.255.0  broadcast 192.168.8.255
+	        inet6 fe80::b2d5:ccff:fefa:9189  prefixlen 64  scopeid 0x20<link>
+	        ether b0:d5:cc:fa:91:89  txqueuelen 1000  (Ethernet)
+	        RX packets 0  bytes 0 (0.0 B)
+	        RX errors 0  dropped 0  overruns 0  frame 0
+	        TX packets 78  bytes 17575 (17.1 KiB)
+	        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+	lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+	        inet 127.0.0.1  netmask 255.0.0.0
+	        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+	        loop  txqueuelen 1000  (Local Loopback)
+	        RX packets 4000  bytes 272480 (266.0 KiB)
+	        RX errors 0  dropped 0  overruns 0  frame 0
+	        TX packets 4000  bytes 272480 (266.0 KiB)
+	        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+	usb0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+	        inet 192.168.7.2  netmask 255.255.255.252  broadcast 192.168.7.3
+	        inet6 fe80::b2d5:ccff:fefa:918b  prefixlen 64  scopeid 0x20<link>
+	        ether b0:d5:cc:fa:91:8b  txqueuelen 1000  (Ethernet)
+	        RX packets 436  bytes 69952 (68.3 KiB)
+	        RX errors 0  dropped 0  overruns 0  frame 0
+	        TX packets 316  bytes 61535 (60.0 KiB)
+	        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+	usb1: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+	        inet 192.168.6.2  netmask 255.255.255.252  broadcast 192.168.6.3
+	        inet6 fe80::b2d5:ccff:fefa:918e  prefixlen 64  scopeid 0x20<link>
+	        ether b0:d5:cc:fa:91:8e  txqueuelen 1000  (Ethernet)
+	        RX packets 644  bytes 80307 (78.4 KiB)
+	        RX errors 0  dropped 0  overruns 0  frame 0
+	        TX packets 385  bytes 55999 (54.6 KiB)
+	        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+	wlan0: flags=-28605<UP,BROADCAST,RUNNING,MULTICAST,DYNAMIC>  mtu 1500
+	        inet 10.97.85.136  netmask 255.255.255.0  broadcast 10.97.85.255
+	        inet6 fe80::8a4a:eaff:fe62:455b  prefixlen 64  scopeid 0x20<link>
+	        ether 88:4a:ea:62:45:5b  txqueuelen 1000  (Ethernet)
+	        RX packets 37  bytes 5187 (5.0 KiB)
+	        RX errors 0  dropped 0  overruns 0  frame 0
+	        TX packets 100  bytes 18367 (17.9 KiB)
+	        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+When I was acting as a client, I added my public key onto Zhiying's server,
+and his address is 10.97.85.137
+
+	ssh-copy-id -i zhubo@10.97.85.137
+
+Then, the command asked me his password, and then it added my key to his server.
+And we used ssh-agent to manage authentication.
+So I created the agent and added the RSA id so that we can log in.
+
+	eval `ssh-agent -s`
+	ssh-add
+
+Then, we used -X option to ssh in his host.
+
+	ssh -X zhubo@10.97.85.137
+
+To test, run command on Zhiying's BeagleBone
+    firefox
+    xterm
+
+Then the window successfully shows up.
+And Zhiying also made it as a client.
+
+

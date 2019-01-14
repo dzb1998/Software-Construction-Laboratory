@@ -1,0 +1,375 @@
+Assignment 4
+Zhubo Deng
+605186231
+
+Laboratory: Debugging a C program
+
+As usual, keep a log in the file lab4.txt of what you do in the lab so that 
+you can reproduce the results later. This should not merely be a transcript 
+of what you typed: it should be more like a true lab notebook, in which you 
+briefly note down what you did and what happened.
+
+You're helping to maintain an old stable version of coreutils, but that 
+version has a bug in its implementation of the ls program. (Actually, it has 
+two bad bugs, but for now we'll just look at the first one.)
+
+The bug is that ls -t mishandles files whose time stamps are very far in the 
+past. It seems to act as if they are in the future. For example:
+
+$ tmp=$(mktemp -d)
+$ cd $tmp
+$ touch -d '1918-11-11 11:00 GMT' wwi-armistice
+$ touch now
+$ sleep 1
+$ touch now1
+$ TZ=UTC0 ls -lt --full-time wwi-armistice now now1
+-rw-r--r-- 1 eggert csfac 0 1918-11-11 11:00:00.000000000 +0000 wwi-armistice
+-rw-r--r-- 1 eggert csfac 0 2018-10-29 16:43:16.805404419 +0000 now1
+-rw-r--r-- 1 eggert csfac 0 2018-10-29 16:43:15.801376773 +0000 now
+$ cd
+$ rm -fr $tmp
+
+Build this old version of coreutils as-is, and then again with this renaming 
+patch. What problems did you have when building it as-is, and why did the 
+renaming patch fix them?
+
+Reproduce the problem. Use a debugger to figure out what went wrong and to fix 
+the corresponding source file.
+
+Construct a new patch file lab4.diff containing your coreutils fixes, in the 
+form of a ChangeLog entry followed by a diff -u patch.
+
+Also, try to reproduce the problem in your home directory on the SEASnet Linux 
+servers, instead of using the $tmp directory. When running the above test 
+case, use the already-installed touch and ls utilities instead of the old 
+version of coreutils. How well does SEASnet do?
+
+
+
+1. Download file from the website, untar and unzip it, create a directory 
+named coreutils_lab4/ for prefix of intalling as we did in assignment 3, 
+than use command "make"
+
+	[classzde@lnxsrv06 ~]$ wget https://web.cs.ucla.edu/classes/fall18/cs35L/
+	assign/coreutils-with-bug.tar.gz
+	[classzde@lnxsrv06 ~]$ tar -xzvf coreutils-with-bug.tar.gz 
+	[classzde@lnxsrv06 ~]$ mkdir coreutils_lab4/
+	[classzde@lnxsrv06 ~]$ cd coreutils-with-bug/
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ emacs INSTALL 
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ ./configure --prefix 
+	~/coreutils_lab4
+	checking build system type... x86_64-unknown-linux-gnu
+	checking host system type... x86_64-unknown-linux-gnu
+	configure: autobuild project... GNU coreutils
+	configure: autobuild revision... 5.93
+	configure: autobuild hostname... lnxsrv06.seas.ucla.edu
+	.
+	.
+	.
+	config.status: executing default-1 commands
+	config.status: creating po/POTFILES
+	config.status: creating po/Makefile
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ 
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ 
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ make
+	make  all-recursive
+	make[1]: Entering directory `/w/home.04/class/classzde/coreutils-with-bug'
+	Making all in lib
+	.
+	.
+	.
+	In file included from utimecmp.c:41:0:
+	utimens.h:2:5: error: conflicting types for 'futimens'
+	 int futimens (int, char const *, struct timespec const [2]);
+	     ^
+	In file included from utimecmp.h:25:0,
+	                 from utimecmp.c:25:
+	/usr/include/sys/stat.h:373:12: note: previous declaration of 'futimens' 
+	was here
+	 extern int futimens (int __fd, const struct timespec __times[2]) 
+	 __THROW;
+	            ^
+	make[3]: *** [utimecmp.o] Error 1
+	make[3]: Leaving directory `/w/home.04/class/classzde/coreutils-with-bug/
+	lib'
+	make[2]: *** [all] Error 2
+	make[2]: Leaving directory `/w/home.04/class/classzde/coreutils-with-bug/
+	lib'
+	make[1]: *** [all-recursive] Error 1
+	make[1]: Leaving directory `/w/home.04/class/classzde/coreutils-with-bug'
+	make: *** [all] Error 2
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ 
+
+
+
+2. We noticed there is a function name error, and it seems like there are two 
+functions have the same name, so it reported the error. To fix this, I should 
+use the patch file from the website. After checking directory details 
+in the patch file, which shows: 
+	--- lib/utimens.c~      2005-11-02 04:16:12.000000000 -0800                     
+	+++ lib/utimens.c       2010-01-26 12:20:13.292737899 -0800                     
+I notice that it should be put under coreutils-with-bug/ and use -p0 option 
+to patch them.
+
+	[classzde@lnxsrv06 ~]$ cd coreutils-with-bug/
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ ls
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ wget https://web.cs.ucla.edu/
+	classes/fall18/cs35L/assign/coreutils.diff
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ emacs coreutils.diff 
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ patch -p0 < coreutils.diff 
+	patching file lib/utimens.c
+	patching file lib/utimens.h
+	patching file src/copy.c
+	patching file src/tee.c
+	patching file src/touch.c
+
+(open one of the files to check it was patched successfully)
+
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ emacs lib/utimens.c
+
+(then use "make", "make install" command to overwrite the old version)
+
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ make 
+	make  all-recursive
+	make[1]: Entering directory `/w/home.04/class/classzde/coreutils-with-bug'
+	Making all in lib
+	make[2]: Entering directory `/w/home.04/class/classzde/coreutils-with-bug/
+	lib'
+	make  all-am
+	.
+	.
+	.
+	make[2]: Entering directory `/w/home.04/class/classzde/coreutils-with-bug'
+	make[2]: Leaving directory `/w/home.04/class/classzde/coreutils-with-bug'
+	make[1]: Leaving directory `/w/home.04/class/classzde/coreutils-with-bug'
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ 
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ make install
+	Making install in lib
+	make[1]: Entering directory `/w/home.04/class/classzde/coreutils-with-bug/
+	lib'
+	make  install-am
+	make[2]: Entering directory `/w/home.04/class/classzde/coreutils-with-bug/
+	lib'
+	.
+	.
+	.
+	make[2]: Nothing to be done for `install-data-am'.
+	make[2]: Leaving directory `/w/home.04/class/classzde/coreutils-with-bug'
+	make[1]: Leaving directory `/w/home.04/class/classzde/coreutils-with-bug'
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ 
+
+(Install successfully)
+
+
+
+3. Start to reproduce the bug, use the command given on the class webpage.
+
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ cd ..
+	[classzde@lnxsrv06 ~]$ 
+	[classzde@lnxsrv06 ~]$ tmp=$(mktemp -d)
+	[classzde@lnxsrv06 ~]$ cd $tmp
+	[classzde@lnxsrv06 /tmp/tmp.VT0l3fgXMI]$ touch -d '1918-11-11 11:00 GMT' 
+	wwi-armistice
+	[classzde@lnxsrv06 /tmp/tmp.VT0l3fgXMI]$ touch now
+	[classzde@lnxsrv06 /tmp/tmp.VT0l3fgXMI]$ sleep 1
+	[classzde@lnxsrv06 /tmp/tmp.VT0l3fgXMI]$ touch now1
+	[classzde@lnxsrv06 /tmp/tmp.VT0l3fgXMI]$ TZ=UTC0 ls -lt --full-time 
+	wwi-armistice now now1
+	-rw-r--r-- 1 classzde class 0 2018-11-07 02:46:59.941847523 +0000 now1
+	-rw-r--r-- 1 classzde class 0 2018-11-07 02:46:42.248247666 +0000 now
+	-rw-r--r-- 1 classzde class 0 1918-11-11 11:00:00.000000000 +0000 
+	wwi-armistice
+
+(It shows the time correctly, but we need to reproduce the bug by using ls -t 
+under coreutils folder we just installed, rather than the system one)
+
+	[classzde@lnxsrv06 /tmp/tmp.VT0l3fgXMI]$ TZ=UTC0 ~/coreutils_lab4/
+	bin/ls -lt --full-time wwi-armistice now now1
+	-rw-r--r-- 1 classzde class 0 1918-11-11 11:00:00.000000000 +0000 
+	wwi-armistice
+	-rw-r--r-- 1 classzde class 0 2018-11-07 02:46:59.941847523 +0000 now1
+	-rw-r--r-- 1 classzde class 0 2018-11-07 02:46:42.248247666 +0000 now
+	[classzde@lnxsrv06 /tmp/tmp.VT0l3fgXMI]$ 
+	[classzde@lnxsrv06 /tmp/tmp.VT0l3fgXMI]$ cd
+	[classzde@lnxsrv06 ~]$ rm -fr $tmp
+
+(Now it shows the 1918 one was printed at first, but it was supposed to be 
+printed as last. We need to debug on this problem using gdb debugger)
+
+
+
+4. Debugging by using gdb. First, I used "info functions" to get a list of 
+functions. I notice that the bug may happen in the compare_mtime, so I set 
+the break point at compare_mtime and to see what happen. 
+
+	[classzde@lnxsrv06 ~/coreutils-with-bug/src]$ gdb ls
+	GNU gdb (GDB) Red Hat Enterprise Linux 7.6.1-110.el7
+	Copyright (C) 2013 Free Software Foundation, Inc.
+	License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/
+	gpl.html>
+	This is free software: you are free to change and redistribute it.
+	There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+	and "show warranty" for details.
+	This GDB was configured as "x86_64-redhat-linux-gnu".
+	For bug reporting instructions, please see:
+	<http://www.gnu.org/software/gdb/bugs/>...
+	Reading symbols from /w/home.04/class/classzde/coreutils-with-bug/
+	src/ls...done.
+	
+	(gdb) info functions
+	All defined functions:
+
+	File ls.c:
+	int main(int, char **);
+	void usage(int);
+	static size_t calculate_columns(_Bool);
+	static void clear_files(void);
+	static int compare_atime(V, V);
+	static int compare_ctime(V, V);
+	static int compare_extension(V, V);
+	static int compare_mtime(V, V);
+	static int compare_name(V, V);
+	static int compare_size(V, V);
+
+	(gdb) break compare_mtime
+	(gdb) r -lt
+	The program being debugged has been started already.
+	Start it from the beginning? (y or n) y
+	Starting program: /w/home.04/class/classzde/coreutils-with-bug/src/ls -lt
+
+	Breakpoint 1, compare_mtime (a=0x62a280, b=0x62a330) at ls.c:2884
+	2884	static int compare_mtime (V a, V b) { return cmp_mtime (a, b, 
+	xstrcoll); }
+	(gdb) l
+	2879	{
+	2880	  int diff = timespec_cmp (get_stat_mtime (&b->stat),
+	2881				   get_stat_mtime (&a->stat));
+	2882	  return diff ? diff : cmp (a->name, b->name);
+	2883	}
+	2884	static int compare_mtime (V a, V b) { return cmp_mtime (a, b, 
+	xstrcoll); }
+	2885	static int compstr_mtime (V a, V b) { return cmp_mtime (a, b, 
+	strcmp); }
+	2886	static int rev_cmp_mtime (V a, V b) { return compare_mtime (b, a); }
+	2887	static int rev_str_mtime (V a, V b) { return compstr_mtime (b, a); }
+	2888	
+	(gdb) n
+	0x00007ffff7a46ae3 in msort_with_tmp.part.0 () from /lib64/libc.so.6
+	(gdb) n
+	Single stepping until exit from function msort_with_tmp.part.0,
+	which has no line number information.
+	0x00007ffff7aa27e0 in __memcpy_sse2 () from /lib64/libc.so.6
+	(gdb) 
+
+(I noticed that compare_mtime leads to cmp_mtime, and it leads to timespec_cmp 
+in timespec.h file, so the problem may happen in this file. The code shows: )
+
+	timespec_cmp (struct timespec a, struct timespec b)
+	{
+	  int diff = a.tv_sec - b.tv_sec;
+	  return diff ? diff : a.tv_nsec - b.tv_nsec;
+	}
+
+(The problem is “Integer Overflow”, which occurs when the result of an 
+arithmetic operation exceeds the maximum size of integer type to store it. 
+When the time is far from now in the past, after doing subtraction and assign 
+it to an integer, it will wrap around to future time. 
+We can do comparison operators instead of arithmetic operation to fix 
+this problem.)
+
+(Go to home directory, make a copy of timespec.h from lib/, edit it into 
+correct comparison syntax with emacs editor as following: )
+
+	[classzde@lnxsrv06 ~/coreutils-with-bug/lib]$ cd ~
+	[classzde@lnxsrv06 ~]$ cp ~/coreutils-with-bug/lib/timespec.h timespec.h
+	[classzde@lnxsrv06 ~]$ emacs timespec.h
+
+(Code after edited: )
+	timespec_cmp (struct timespec a, struct timespec b)
+	{
+	  if (a.tv_sec > b.tv_sec)
+	    return 1;
+	  else if (a.tv_sec < b.tv_sec)
+	    return -1;
+	  else
+	    return 0;
+	}
+
+(Make a patch file by using diff command. Add and edit change log for 
+lab4.diff file as following, and paste the chang log it on the top of 
+lab4.diff file.)
+
+	[classzde@lnxsrv06 ~]$ diff -u ~/coreutils-with-bug/lib/
+	timespec.h timespec.h > lab4.diff
+	[classzde@lnxsrv06 ~]$ emacs lab4.diff
+
+	C-x 4-a (Change log command)
+	2018-11-07  Zhubo Deng  <classzde@lnxsrv06.seas.ucla.edu>
+
+	        * timespec.h (timespec_cmp): Fix the subtraction operator in 
+	timespec_cmp function with comparison operator to avoid integer overflow. 
+	C-x C-c (Save and Close emacs)
+
+
+
+5. Patch, make, make install, and test the revised version (not required)
+
+	[classzde@lnxsrv06 ~]$ cd coreutils-with-bug/
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ cd ..
+	[classzde@lnxsrv06 ~]$ cp lab4.diff lab4patch.diff
+	[classzde@lnxsrv06 ~]$ mv lab4patch.diff ~/coreutils-with-bug/lib/
+	[classzde@lnxsrv06 ~]$ cd coreutils-with-bug/lib
+	[classzde@lnxsrv06 ~/coreutils-with-bug/lib]$ patch < lab4patch.diff
+	patching file timespec.h
+	[classzde@lnxsrv06 ~/coreutils-with-bug/lib]$ cd ..
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ make
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ make install
+	[classzde@lnxsrv06 ~/coreutils-with-bug]$ cd ..
+	[classzde@lnxsrv06 ~]$ tmp=$(mktemp -d)
+	[classzde@lnxsrv06 ~]$ cd $tmp
+	[classzde@lnxsrv06 /tmp/tmp.W4aEUeZtin]$ touch -d '1918-11-11 11:00 GMT' 
+	wwi-armistice
+	[classzde@lnxsrv06 /tmp/tmp.W4aEUeZtin]$ touch now
+	[classzde@lnxsrv06 /tmp/tmp.W4aEUeZtin]$ sleep 1
+	[classzde@lnxsrv06 /tmp/tmp.W4aEUeZtin]$ touch now1
+	[classzde@lnxsrv06 /tmp/tmp.W4aEUeZtin]$ TZ=UTC0 ~/coreutils_lab4/bin/
+	ls -lt --full-time wwi-armistice now now1
+	-rw-r--r-- 1 classzde class 0 2018-11-07 08:45:10.467232350 +0000 now1
+	-rw-r--r-- 1 classzde class 0 2018-11-07 08:45:01.824937865 +0000 now
+	-rw-r--r-- 1 classzde class 0 1918-11-11 11:00:00.000000000 +0000 
+	wwi-armistice
+	[classzde@lnxsrv06 /tmp/tmp.W4aEUeZtin]$ cd
+	[classzde@lnxsrv06 ~]$ rm -fr $tmp
+
+(Succeed. The times show in the correct order.)
+
+
+
+6. Try to reproduce the problem in your home directory on the SEASnet Linux 
+servers, instead of using the $tmp directory. When running the above test 
+case, use the already-installed touch and ls utilities instead of the old 
+version of coreutils. How well does SEASnet do?
+
+(I made a directory called lab4tmp/ to test, and then use the given command.)
+
+	[classzde@lnxsrv06 ~]$ mkdir lab4tmp
+	[classzde@lnxsrv06 ~]$ cd lab4tmp/
+	[classzde@lnxsrv06 ~/lab4tmp]$ touch -d '1918-11-11 11:00 GMT' 
+	wwi-armistice
+	[classzde@lnxsrv06 ~/lab4tmp]$ touch now
+	[classzde@lnxsrv06 ~/lab4tmp]$ sleep 1
+	[classzde@lnxsrv06 ~/lab4tmp]$ touch now1
+	[classzde@lnxsrv06 ~/lab4tmp]$ TZ=UTC0 ls -lt --full-time 
+	wwi-armistice now now1
+	-rw-r--r-- 1 classzde class 0 2054-12-17 17:28:16.000000000 +0000 
+	wwi-armistice
+	-rw-r--r-- 1 classzde class 0 2018-11-07 08:48:29.509402000 +0000 now1
+	-rw-r--r-- 1 classzde class 0 2018-11-07 08:48:20.051196000 +0000 now
+	[classzde@lnxsrv06 ~/lab4tmp]$ 
+
+(The time 1918 we input shows up as 2054. I think it is due to different 
+file systems. On SEASnet, SEASnet NFS file system has 32-bit time stamps 
+which starts from 1970, but Local File System on Linux server has 64-bit 
+time stamps. When the NFS file system encounters 1918 we assigned, it will 
+return some time stamp in the future around 2054.)
+

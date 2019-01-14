@@ -1,0 +1,88 @@
+HW 3
+
+Zhubo Deng
+605186231
+
+
+Q1. Does the patch improve the performance of ls or make it worse? Briefly 
+explain.
+
+This patch improved the profermance because now the "ls" command is based on 
+the option order, that is which of -a -A comes first.
+
+
+Q2. If your company adopts this patched version of Coreutils instead of the 
+default one, what else should you watch out for? Might this new version of 
+Coreutils introduce other problems with your application?
+
+No, it won’t cause any problem.
+As shown in the patch:
+	 NEWS                 |  3 +++
+	 src/ls.c             |  3 +--
+	 tests/local.mk       |  1 +
+	 tests/ls/a-option.sh | 27 +++++++++++++++++++++++++++
+	 4 files changed, 32 insertions(+), 2 deletions(-)
+	 create mode 100755 tests/ls/a-option.sh
+This patch modified the original code and added two other new files which show 
+the new version of “ls -a -A” runs successfully.
+This won’t introduce other problem with the application.
+Moreover, if other commands are also using overiding but not in the option 
+order, we should also watch out those commands and patch them as we did for 
+"ls" command.
+
+
+
+Consider the Python script randline.py.
+
+Q3. What happens when this script is invoked on an empty file like /dev/null, 
+and why?
+
+Since /dev/null is an empty file, there will be an error:
+# raises IndexError if seq is empty
+IndexError: list index out of range
+And chooseline() doesn't allow an empty input argument.
+As following commands show:
+
+[classzde@lnxsrv06 ~]$ ls
+adzb            coreutils-8.29.tar.xz      Desktop          nsdefault
+ass1            coreutils-8.29.tar.xz.1    Documents        perl5
+ass2            coreutils-8.29.tar.xz.sig  Downloads        randline.py
+coreutils-8.29  coreutilsInstall           gnu-keyring.gpg  tempass3
+[classzde@lnxsrv06 ~]$ chmod +x randline.py
+[classzde@lnxsrv06 ~]$ mkdir dev/
+[classzde@lnxsrv06 ~]$ cd dev/
+[classzde@lnxsrv06 ~/dev]$ touch null
+[classzde@lnxsrv06 ~/dev]$ cd ..
+[classzde@lnxsrv06 ~]$ ./randline.py /dev/null
+Traceback (most recent call last):
+  File "./randline.py", line 70, in <module>
+    main()
+  File "./randline.py", line 64, in main
+    sys.stdout.write(generator.chooseline())
+  File "./randline.py", line 34, in chooseline
+    return random.choice(self.lines)
+  File "/usr/lib64/python2.7/random.py", line 274, in choice
+    return seq[int(self.random() * len(seq))]  # raises IndexError if seq 
+    is empty
+IndexError: list index out of range
+[classzde@lnxsrv06 ~]$ 
+
+
+
+Q4. What happens when this script is invoked with Python 3 rather than 
+Python 2, and why? (You can run Python 3 on the SEASnet hosts by using the 
+command python3 instead of python.)
+
+When we run python 3, there is a syntax errorat line at line 65, 
+which means we cannot run "except IOError as (errno, strerror): " in python3.
+As following commands show:
+
+[classzde@lnxsrv06 ~]$ python3 ./randline.py /dev/null
+  File "./randline.py", line 65
+    except IOError as (errno, strerror):
+                      ^
+SyntaxError: invalid syntax
+[classzde@lnxsrv06 ~]$ 
+
+
+

@@ -1,0 +1,20 @@
+gitk description 
+
+TOP:
+1. The upper rightmost window show the date of the commit in the format 'YYYY-MM-DD'
+and the time in the military time format 'HH:MM'.
+
+2. The upper middle window show the authors and their email address of each commit.
+
+3. The upper left window shows all of the commits made in a hierarchical tree
+and also showing their relationships, and the HEAD pointer, and commit messages.
+
+Middle:
+4. The section between the upper half and the lower half has the SHA1 ID, 
+and a search box with various options.
+
+Bottom:
+5. The lower right window shows the files impacted by the selected commit.
+
+6. The lower left window shows a lot of information of the selected commit, such as
+the author, committer, branches, commit message, the changes in diff format, etc.

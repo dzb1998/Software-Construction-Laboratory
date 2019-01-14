@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# Zhubo Deng
+# 605186231
+
+dir=$1              
+# pass the first argument
+directory=`ls -a $dir | sort`
+# get the sorted file list in the directory
+IFS=$'\n'
+# update the token, to not ignore the file with space in it
+
+# loop for all of the file in the directory
+for file in $directory
+do 
+    # loop for all of the file in the directory
+    for filedup in $directory
+    do
+        # check they exist and have directories, then continue (ignore)
+        if [ -d "$file" ] || [ -d "$filedup" ]
+        then
+            continue
+        fi
+        # also check they have symbolic links, then continue (ignore)
+        if [ -L "$file" ] || [ -L "$filedup" ]
+        then 
+            continue
+        fi
+        # check both of file and filedup are files, 
+        # and chek they are duplicated
+        if [ -f "$file" ] && [ -f "$filedup" ] && [ "$file" != "$filedup" ]
+        then
+            cmp -s "$file" "$filedup"
+            # check previou command have no errors
+            if [ $? -eq 0 ]
+            then
+                # check if the file has leading "." with filedup
+                # then delete the othr one and link it to the file with "."
+                if [ ${file:0:1} == '.' ] && [ ${filedup:0:1} != '.' ]
+                then
+                    rm "$filedup"
+                    ln "$file" "$filedup"
+                # checke filedup with file in the same way
+                elif [ ${file:0:1} != '.' ] && [ ${filedup:0:1} == '.' ]
+                then
+                    rm "$file"
+                    ln "$filedup" "$file"
+                # otherwise, check filename in alpha order,
+                # delete the later appeared alpha one and link it to the other
+                elif [ "$file" < "$filedup" ]
+                then
+                    rm "$filedup"
+                    ln "$file" "$filedup"
+                else
+                    rm "$file"
+                    ln "$filedup" "$file"
+                fi
+            fi
+        fi
+    done
+done    
+
+# end shell scripting
+
